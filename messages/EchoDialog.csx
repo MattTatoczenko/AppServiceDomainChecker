@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Connector;
@@ -10,8 +11,7 @@ public class EchoDialog : IDialog<object>
 {
     protected int count = 1;
     protected bool StartOfChecker;
-    protected ArrayList AppServiceOptions = new ArrayList();
-    protected ArrayList AppServiceOptionsDescriptions = new ArrayList();
+    protected List<String> AppServiceOptions = new List<String>();
 
 
     public Task StartAsync(IDialogContext context)
@@ -69,8 +69,6 @@ public class EchoDialog : IDialog<object>
     {
         AppServiceOptions.Add("App Service Environment");
         AppServiceOptions.Add("Traditional App Service");
-        AppServiceOptionsDescriptions.Add("Test1");
-        AppServiceOptionsDescriptions.Add("Test2");
     }
     
     public async Task AfterAppServiceChoiceAsync(IDialogContext context, IAwaitable<IMessageActivity> argument)
@@ -88,6 +86,7 @@ public class EchoDialog : IDialog<object>
         context.Wait(MessageReceivedAsync);
     }
 
+    /*
     public async Task AfterResetAsync(IDialogContext context, IAwaitable<bool> argument)
     {
         var confirm = await argument;
@@ -102,4 +101,5 @@ public class EchoDialog : IDialog<object>
         }
         context.Wait(MessageReceivedAsync);
     }
+    */
 }
