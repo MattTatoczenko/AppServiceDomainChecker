@@ -72,10 +72,10 @@ public class EchoDialog : IDialog<object>
         AppServiceOptions.Add("Traditional App Service");
     }
     
-    public async Task AfterAppServiceChoiceAsync(IDialogContext context, IAwaitable<IMessageActivity> argument)
+    public async Task AfterAppServiceChoiceAsync(IDialogContext context, IAwaitable<string> argument)
     {
         var message = await argument;
-        if (message.Text == "App Service Environment")
+        if (message == "App Service Environment")
         {
             StartOfChecker = false;
             await context.PostAsync("You're using an ASE. Let's continue with that.");
