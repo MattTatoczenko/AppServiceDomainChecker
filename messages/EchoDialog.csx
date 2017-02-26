@@ -58,7 +58,8 @@ public class EchoDialog : IDialog<object>
                 context,
                 AfterAppServiceChoiceAsync,
                 AppServiceOptions,
-                "Is your App Service in an App Service Environment or is it a traditional App Service?");
+                "Is your App Service in an App Service Environment or is it a traditional App Service?",
+                promptStyle: PromptStyle.Auto);
         } else {
             await context.PostAsync($"{this.count++}: You said {message.Text}");
             context.Wait(MessageReceivedAsync);
