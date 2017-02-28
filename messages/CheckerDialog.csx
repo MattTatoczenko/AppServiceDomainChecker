@@ -48,18 +48,32 @@ public class CheckerDialog : IDialog<object>
         var message = await argument;
         if (message == "App Service Environment")
         {
-            await AskAppServiceEnvironmentName(context);
+            await context.PostAsync("You're using an App Service Environment. We'll need the name of the App Service Environment.");
+            // TODO: Set isASE to true
+            AskAppServiceEnvironmentName(context);
         }
         else
         {
             await context.PostAsync("You're using a regular App Service.");
 
-            // Have a similar prompt here to ask for the App Service Name. Need to figure this out better.
+            // TODO: Have a similar prompt here to ask for the App Service Name.
+            // TODO: Set isASE to false and ASEName to null here
+            await context.PostAsync("Let's check if you are using Traffic Manager.");
 
-            await CheckForTrafficManager(context);
+            CheckForTrafficManager(context);
         }
     }
 
+    void AskAppServiceEnvironmentName(IDialogContext context)
+    {
+        PromptDialog.Text(
+            context,
+            GetAppServiceEnvironmentName,
+            "What's the name of your App Service Environment?",
+            "Please enter the name of your App Service Environment.");
+    }
+
+    /*
     public async Task AskAppServiceEnvironmentName(IDialogContext context)
     {
         await context.PostAsync("You're using an App Service Environment. We'll need the name of the App Service Environment.");
@@ -69,13 +83,13 @@ public class CheckerDialog : IDialog<object>
             GetAppServiceEnvironmentName,
             "What's the name of your App Service Environment?",
             "Please enter the name of your App Service Environment.");
-    }
+    } */
 
     public async Task GetAppServiceEnvironmentName(IDialogContext context, IAwaitable<string> argument)
     {
         var message = await argument;
 
-        // do some checks on the name. Shouldn't have periods. Can have dashes, letters, and numbers
+        // TODO: do some checks on the name. Shouldn't have periods. Can have dashes, letters, and numbers
         /* if (message is valid){
          *     Confirm the name
          * }
@@ -87,7 +101,7 @@ public class CheckerDialog : IDialog<object>
 
         await context.PostAsync($"The name of your App Service Environment is {message}");
 
-        // Most likely need to create an ASEAppService right here to hold the name value (can't pass it on easily)
+        // TODO: Set ASEName = message
 
         PromptDialog.Confirm(
                 context,
@@ -103,18 +117,30 @@ public class CheckerDialog : IDialog<object>
         if (confirm)
         {
             await context.PostAsync("Thank you for confirming the name of your App Service Environment!");
-            await CheckForTrafficManager(context);
+            await context.PostAsync("Let's check if you are using Traffic Manager.");
+            CheckForTrafficManager(context);
         }
         else
         {
             await context.PostAsync("Let's get the right App Service Environment name.");
-            await AskAppServiceEnvironmentName(context);
+            AskAppServiceEnvironmentName(context);
         }
     }
 
     /* Need to figure out if I should have one of these for each type, ASE or traditional App Service. 
      * This way I can create a single instance of a class like ASEAppService, TradAppService, ASEAppServiceWithTM, and TradAppServiceWithTM. Still working on that
      * */
+    void CheckForTrafficManager(IDialogContext context)
+    {
+        PromptDialog.Confirm(
+                context,
+                AfterCheckForTrafficManager,
+                "Is your App Service an endpoint of a Traffic Manager?",
+                "I'm sorry, I didn't understand that. Are you using Traffic Manager for this App Service?",
+                promptStyle: PromptStyle.Auto);
+    }
+
+    /*
     public async Task CheckForTrafficManager(IDialogContext context)
     {
         await context.PostAsync("Let's check if you are using Traffic Manager.");
@@ -125,7 +151,7 @@ public class CheckerDialog : IDialog<object>
                 "Is your App Service an endpoint of a Traffic Manager?",
                 "I'm sorry, I didn't understand that. Are you using Traffic Manager for this App Service?",
                 promptStyle: PromptStyle.Auto);
-    }
+    } */
 
     public async Task AfterCheckForTrafficManager(IDialogContext context, IAwaitable<bool> argument)
     {
@@ -133,12 +159,14 @@ public class CheckerDialog : IDialog<object>
         if (confirm)
         {
             await context.PostAsync("Your App Service is an endpoint of a Traffic Manager.");
-            // Insert path to go to after this
+            // TODO: Set usingTM to true
+            // TODO: Send to the next method which asks for the Traffic Manager name
         }
         else
         {
             await context.PostAsync("Your App Service is not an endpoint of a Traffic Manager.");
-            // Insert path to go to after this
+            // TODO: Set usingTM to false
+            // TODO: Path should go right into the domain checker prompt here
         }
         context.Wait(MessageReceivedAsync);
     }
@@ -160,7 +188,6 @@ public class CheckerDialog : IDialog<object>
         {
             await context.PostAsync($"You said {message.Text}");
             context.Wait(MessageReceivedAsync);
-            
         }
     }
     
@@ -177,7 +204,6 @@ public class CheckerDialog : IDialog<object>
             await context.PostAsync("We'll continue checking the domain.");
             context.Wait(MessageReceivedAsync);
         }
-        
     }
     
 }
