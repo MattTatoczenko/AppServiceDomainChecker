@@ -48,13 +48,7 @@ public class CheckerDialog : IDialog<object>
         var message = await argument;
         if (message == "App Service Environment")
         {
-            await context.PostAsync("You're using an ASE. Let's continue with that.");
-
-            PromptDialog.Text(
-                context,
-                GetAppServiceEnvironmentName,
-                "What's the name of your App Service Environment?",
-                "Please enter the name of your App Service Environment.");
+            await AskAppServiceEnvironmentName(context);
         }
         else
         {
@@ -64,7 +58,17 @@ public class CheckerDialog : IDialog<object>
 
             await CheckForTrafficManager(context);
         }
-        
+    }
+
+    public async Task AskAppServiceEnvironmentName(IDialogContext context)
+    {
+        await context.PostAsync("You're using an App Service Environment. We'll need the name of the App Service Environment.");
+
+        PromptDialog.Text(
+            context,
+            GetAppServiceEnvironmentName,
+            "What's the name of your App Service Environment?",
+            "Please enter the name of your App Service Environment.");
     }
 
     public async Task GetAppServiceEnvironmentName(IDialogContext context, IAwaitable<string> argument)
@@ -72,13 +76,40 @@ public class CheckerDialog : IDialog<object>
         var message = await argument;
 
         // do some checks on the name. Shouldn't have periods. Can have dashes, letters, and numbers
+        /* if (message is valid){
+         *     Confirm the name
+         * }
+         * else {
+         *   do a context.PostAsync("The App Service Environment name entered is invalid. Please re-enter it");
+         *   Send them back to AskAppServiceEnvironmentName
+         *   }
+         *   */
 
-        // Might want to use a "confirm" prompt here to be sure they entered it right. If not, we'll have to loop back somewhere for them to re-enter the name
-        await context.PostAsync($"The name of your ASE is {message}");
+        await context.PostAsync($"The name of your App Service Environment is {message}");
 
-        // Should probably go to "CheckForTrafficManager" next. Need to figure out the best way to do this
+        // Most likely need to create an ASEAppService right here to hold the name value (can't pass it on easily)
 
-        context.Wait(MessageReceivedAsync);
+        PromptDialog.Confirm(
+                context,
+                ConfirmAppServiceEnvironmentName,
+                $"Is {message} the correct name for your App Service Environment?",
+                $"Can you confirm if {message} is the name of your App Service Environment?",
+                promptStyle: PromptStyle.Auto);
+    }
+
+    public async Task ConfirmAppServiceEnvironmentName(IDialogContext context, IAwaitable<bool> argument)
+    {
+        var confirm = await argument;
+        if (confirm)
+        {
+            await context.PostAsync("Thank you for confirming the name of your App Service Environment!");
+            await CheckForTrafficManager(context);
+        }
+        else
+        {
+            await context.PostAsync("Let's get the right App Service Environment name.");
+            await AskAppServiceEnvironmentName(context);
+        }
     }
 
     /* Need to figure out if I should have one of these for each type, ASE or traditional App Service. 
@@ -121,7 +152,7 @@ public class CheckerDialog : IDialog<object>
             PromptDialog.Confirm(
                 context,
                 AfterRestartAsync,
-                "Are you sure you want to go back to the beginning??",
+                "Are you sure you want to go back to the beginning?",
                 "I'm sorry, I didn't understand that.",
                 promptStyle: PromptStyle.Auto);
         }
