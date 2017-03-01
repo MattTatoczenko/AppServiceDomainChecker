@@ -1,73 +1,70 @@
 ﻿using System;
-
-namespace AppServiceDomainChecker
+[Serializable]
+public class AppService
 {
-    public class AppService
+    private bool isASE;
+    private bool usingTM;
+    private string aseName;
+    private string tmName;
+    private string appServiceName;
+
+    public bool IsASE
     {
-        private bool isASE;
-        private bool usingTM;
-        private string aseName;
-        private string tmName;
-        private string appServiceName;
-
-        public bool IsASE
+        get
         {
-            get
-            {
-                return isASE;
-            }
-            set
-            {
-                isASE = value;
-            }
+            return isASE;
         }
-
-        public bool UsingTM
+        set
         {
-            get
-            {
-                return usingTM;
-            }
-            set
-            {
-                usingTM = value;
-            }
+            isASE = value;
         }
+    }
 
-        public string AseName
+    public bool UsingTM
+    {
+        get
         {
-            get
-            {
-                return aseName;
-            }
-            set
-            {
-                aseName = value;
-            }
+            return usingTM;
         }
-
-        public string TmName
+        set
         {
-            get
-            {
-                return tmName;
-            }
-            set
-            {
-                tmName = value;
-            }
+            usingTM = value;
         }
+    }
 
-        public string AppServiceName
+    public string AseName
+    {
+        get
         {
-            get
-            {
-                return appServiceName;
-            }
-            set
-            {
-                appServiceName = value;
-            }
+            return aseName;
+        }
+        set
+        {
+            aseName = value;
+        }
+    }
+
+    public string TmName
+    {
+        get
+        {
+            return tmName;
+        }
+        set
+        {
+            tmName = value;
+        }
+    }
+
+    public string AppServiceName
+    {
+        get
+        {
+            return appServiceName;
+        }
+        set
+        {
+            appServiceName = value;
         }
     }
 }

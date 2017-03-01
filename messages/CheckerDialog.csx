@@ -1,3 +1,5 @@
+#load "..\AppService.cs"
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,7 +11,7 @@ using Microsoft.Bot.Connector;
 [Serializable]
 public class CheckerDialog : IDialog<object>
 {
-
+    private AppService appService;
     public Task StartAsync(IDialogContext context)
     {
         try
@@ -47,17 +49,19 @@ public class CheckerDialog : IDialog<object>
     public async Task AfterAppServiceChoiceAsync(IDialogContext context, IAwaitable<string> argument)
     {
         var message = await argument;
+        this.appService = new AppService();
         if (message == "App Service Environment")
         {
             await context.PostAsync("You're using an App Service Environment. We'll need the name of the App Service Environment.");
-            // TODO: Set isASE to true
+            this.appService.IsASE = true;
             AskAppServiceEnvironmentName(context);
         }
         else
         {
             await context.PostAsync("You're using a regular App Service.");
 
-            // TODO: Set isASE to false and ASEName to null here
+            this.appService.IsASE = false;
+            this.appService.AseName = null;
 
             AskAppServiceName(context);
         }
