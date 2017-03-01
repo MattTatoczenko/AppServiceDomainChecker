@@ -9,6 +9,7 @@ using Microsoft.Bot.Connector;
 [Serializable]
 public class CheckerDialog : IDialog<object>
 {
+
     public Task StartAsync(IDialogContext context)
     {
         try
@@ -56,11 +57,9 @@ public class CheckerDialog : IDialog<object>
         {
             await context.PostAsync("You're using a regular App Service.");
 
-            // TODO: Have a similar prompt here to ask for the App Service Name.
             // TODO: Set isASE to false and ASEName to null here
-            await context.PostAsync("Let's check if you are using Traffic Manager.");
 
-            CheckForTrafficManager(context);
+            AskAppServiceName(context);
         }
     }
 
@@ -72,18 +71,6 @@ public class CheckerDialog : IDialog<object>
             "What's the name of your App Service Environment?",
             "Please enter the name of your App Service Environment.");
     }
-
-    /*
-    public async Task AskAppServiceEnvironmentName(IDialogContext context)
-    {
-        await context.PostAsync("You're using an App Service Environment. We'll need the name of the App Service Environment.");
-
-        PromptDialog.Text(
-            context,
-            GetAppServiceEnvironmentName,
-            "What's the name of your App Service Environment?",
-            "Please enter the name of your App Service Environment.");
-    } */
 
     public async Task GetAppServiceEnvironmentName(IDialogContext context, IAwaitable<string> argument)
     {
@@ -101,7 +88,7 @@ public class CheckerDialog : IDialog<object>
 
         await context.PostAsync($"The name of your App Service Environment is {message}");
 
-        // TODO: Set ASEName = message
+        // TODO: Set AseName = message
 
         PromptDialog.Confirm(
                 context,
@@ -117,13 +104,64 @@ public class CheckerDialog : IDialog<object>
         if (confirm)
         {
             await context.PostAsync("Thank you for confirming the name of your App Service Environment!");
-            await context.PostAsync("Let's check if you are using Traffic Manager.");
-            CheckForTrafficManager(context);
+            await context.PostAsync("Let's get the name of your App Service.");
+            AskAppServiceName(context);
         }
         else
         {
             await context.PostAsync("Let's get the right App Service Environment name.");
             AskAppServiceEnvironmentName(context);
+        }
+    }
+
+    void AskAppServiceName(IDialogContext context)
+    {
+        PromptDialog.Text(
+            context,
+            GetAppServiceName,
+            "What's the name of your App Service?",
+            "Please enter the name of your App Service.");
+    }
+
+    public async Task GetAppServiceName(IDialogContext context, IAwaitable<string> argument)
+    {
+        var message = await argument;
+
+        // TODO: do some checks on the name. Shouldn't have periods. Can have dashes, letters, and numbers. Possibly has parentheses too
+        /* if (message is valid){
+         *     Confirm the name
+         * }
+         * else {
+         *   do a context.PostAsync("The App Service name entered is invalid. Please re-enter it");
+         *   Send them back to AskAppServiceName
+         *   }
+         *   */
+
+        await context.PostAsync($"The name of your App Service is {message}");
+
+        // TODO: Set AppServiceName = message
+
+        PromptDialog.Confirm(
+                context,
+                ConfirmAppServiceName,
+                $"Is {message} the correct name for your App Service?",
+                $"Please confirm that {message} is the name of your App Service.",
+                promptStyle: PromptStyle.Auto);
+    }
+
+    public async Task ConfirmAppServiceName(IDialogContext context, IAwaitable<bool> argument)
+    {
+        var confirm = await argument;
+        if (confirm)
+        {
+            await context.PostAsync("Thank you for confirming the name of your App Service!");
+            await context.PostAsync("Let's check if you are using Traffic Manager.");
+            CheckForTrafficManager(context);
+        }
+        else
+        {
+            await context.PostAsync("Let's get the right App Service name.");
+            AskAppServiceName(context);
         }
     }
 
@@ -134,26 +172,13 @@ public class CheckerDialog : IDialog<object>
     {
         PromptDialog.Confirm(
                 context,
-                AfterCheckForTrafficManager,
+                ConfirmUseOfTrafficManager,
                 "Is your App Service an endpoint of a Traffic Manager?",
                 "I'm sorry, I didn't understand that. Are you using Traffic Manager for this App Service?",
                 promptStyle: PromptStyle.Auto);
     }
 
-    /*
-    public async Task CheckForTrafficManager(IDialogContext context)
-    {
-        await context.PostAsync("Let's check if you are using Traffic Manager.");
-
-        PromptDialog.Confirm(
-                context,
-                AfterCheckForTrafficManager,
-                "Is your App Service an endpoint of a Traffic Manager?",
-                "I'm sorry, I didn't understand that. Are you using Traffic Manager for this App Service?",
-                promptStyle: PromptStyle.Auto);
-    } */
-
-    public async Task AfterCheckForTrafficManager(IDialogContext context, IAwaitable<bool> argument)
+    public async Task ConfirmUseOfTrafficManager(IDialogContext context, IAwaitable<bool> argument)
     {
         var confirm = await argument;
         if (confirm)
@@ -205,5 +230,4 @@ public class CheckerDialog : IDialog<object>
             context.Wait(MessageReceivedAsync);
         }
     }
-    
 }

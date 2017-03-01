@@ -25,7 +25,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "messages", "messages", "{F4D9DF3B-F4E4-4E19-9053-3AF71A3189FA}"
 	ProjectSection(SolutionItems) = preProject
-		messages\CheckerDialog.csx = messages\CheckerDialog.csx
 		messages\function.json = messages\function.json
 		messages\project.json = messages\project.json
 		messages\project.lock.json = messages\project.lock.json
@@ -33,6 +32,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "messages", "messages", "{F4
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "objects", "objects", "{4F9DF23A-E3B9-4CFE-92FD-77F87CA1713A}"
+	ProjectSection(SolutionItems) = preProject
+		AppService.cs = AppService.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dialog", "Dialog", "{7036A18D-2B80-4085-95C9-42B12BD4F73E}"
+	ProjectSection(SolutionItems) = preProject
+		messages\CheckerDialog.csx = messages\CheckerDialog.csx
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,5 +60,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{F4D9DF3B-F4E4-4E19-9053-3AF71A3189FA} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
 		{4F9DF23A-E3B9-4CFE-92FD-77F87CA1713A} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
+		{7036A18D-2B80-4085-95C9-42B12BD4F73E} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
 	EndGlobalSection
 EndGlobal
