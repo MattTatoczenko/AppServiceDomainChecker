@@ -7,6 +7,7 @@ public class AppService
     private string aseName;
     private string tmName;
     private string appServiceName;
+    private string customHostname;
 
     public bool IsASE
     {
@@ -65,6 +66,18 @@ public class AppService
         set
         {
             appServiceName = value;
+        }
+    }
+
+    public string CustomHostname
+    {
+        get
+        {
+            return customHostname;
+        }
+        set
+        {
+            customHostname = value;
         }
     }
 }

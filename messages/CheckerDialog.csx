@@ -92,7 +92,7 @@ public class CheckerDialog : IDialog<object>
 
         await context.PostAsync($"The name of your App Service Environment is {message}");
 
-        // TODO: Set AseName = message
+        this.appService.AseName = message;
 
         PromptDialog.Confirm(
                 context,
@@ -143,7 +143,7 @@ public class CheckerDialog : IDialog<object>
 
         await context.PostAsync($"The name of your App Service is {message}");
 
-        // TODO: Set AppServiceName = message
+        this.appService.AppServiceName = message;
 
         PromptDialog.Confirm(
                 context,
@@ -188,16 +188,160 @@ public class CheckerDialog : IDialog<object>
         if (confirm)
         {
             await context.PostAsync("Your App Service is an endpoint of a Traffic Manager.");
-            // TODO: Set usingTM to true
-            // TODO: Send to the next method which asks for the Traffic Manager name
+            this.appService.UsingTM = true;
+            AskTrafficManagerName(context);
         }
         else
         {
             await context.PostAsync("Your App Service is not an endpoint of a Traffic Manager.");
-            // TODO: Set usingTM to false
-            // TODO: Path should go right into the domain checker prompt here
+            this.appService.UsingTM = false;
+            AskCustomHostname(context);
         }
-        context.Wait(MessageReceivedAsync);
+    }
+
+    void AskTrafficManagerName(IDialogContext context)
+    {
+        PromptDialog.Text(
+            context,
+            GetTrafficManagerName,
+            "What's the name of the Traffic Manager in front of your App Service?",
+            "Please enter the name of your Traffic Manager.");
+    }
+
+    public async Task GetTrafficManagerName(IDialogContext context, IAwaitable<string> argument)
+    {
+        var message = await argument;
+
+        // TODO: do some checks on the name. Shouldn't have periods. Can have dashes, letters, and numbers. Possibly has parentheses too
+        /* if (message is valid){
+         *     Confirm the name
+         * }
+         * else {
+         *   do a context.PostAsync("The Traffic Manager name entered is invalid. Please re-enter it");
+         *   Send them back to AskTrafficManagerName
+         *   }
+         *   */
+
+        await context.PostAsync($"The name of your Traffic Manager is {message}");
+
+        this.appService.TmName = message;
+
+        PromptDialog.Confirm(
+                context,
+                ConfirmTrafficManagerName,
+                $"Is {message} the correct name for your Traffic Manager?",
+                $"Please confirm that {message} is the name of your Traffic Manager.",
+                promptStyle: PromptStyle.Auto);
+    }
+
+    public async Task ConfirmTrafficManagerName(IDialogContext context, IAwaitable<bool> argument)
+    {
+        var confirm = await argument;
+        if (confirm)
+        {
+            await context.PostAsync("Thank you for confirming the name of your Traffic Manager!");
+            AskCustomHostname(context);
+        }
+        else
+        {
+            await context.PostAsync("Let's get the right Traffic Manager name.");
+            AskTrafficManagerName(context);
+        }
+    }
+
+    void AskCustomHostname(IDialogContext context)
+    {
+        PromptDialog.Text(
+            context,
+            GetCustomHostname,
+            "What is the custom hostname that you are looking to check?",
+            "Please enter the custom hostname you are trying to check.");
+    }
+
+    public async Task GetCustomHostname(IDialogContext context, IAwaitable<string> argument)
+    {
+        var message = await argument;
+
+        // TODO: Check the hostname with a regular expression. Need to lookup the RFC on hostnames
+        /* if (message is valid){
+         *     Confirm the name
+         * }
+         * else {
+         *   do a context.PostAsync("The custom hostname entered is invalid. Please re-enter it");
+         *   Send them back to AskCustomHostname
+         *   }
+         *   */
+
+        await context.PostAsync($"The custom hostname you are checking is {message}");
+
+        this.appService.CustomHostname = message;
+
+        PromptDialog.Confirm(
+                context,
+                ConfirmCustomHostname,
+                $"Is {message} the correct custom hostname?",
+                $"Please confirm that {message} is the correct custom hostname.",
+                promptStyle: PromptStyle.Auto);
+    }
+
+    public async Task ConfirmCustomHostname(IDialogContext context, IAwaitable<bool> argument)
+    {
+        var confirm = await argument;
+        if (confirm)
+        {
+            await context.PostAsync("Thank you for confirming your custom hostname!");
+            await ShowAppServiceInformation(context, null);
+        }
+        else
+        {
+            await context.PostAsync("Let's get the right custom hostname.");
+            AskCustomHostname(context);
+        }
+    }
+
+    public async Task ShowAppServiceInformation(IDialogContext context, IAwaitable<IMessageActivity> argument)
+    {
+        await context.PostAsync("Here's all of the information on your App Service and custom hostname.");
+
+        if (this.appService.UsingTM)
+        {
+            await context.PostAsync($"Traffic Manager name: {this.appService.TmName}");
+        }
+
+        if (this.appService.IsASE)
+        {
+            await context.PostAsync($"App Service Environment name: {this.appService.AseName}");
+        }
+
+        await context.PostAsync($"App Service name: {this.appService.AppServiceName}");
+        await context.PostAsync($"Custom hostname: {this.appService.CustomHostname}");
+        
+        AskForConfirmationOfAppServiceInformation(context);
+    }
+
+    public void AskForConfirmationOfAppServiceInformation(IDialogContext context)
+    {
+        PromptDialog.Confirm(
+                context,
+                ConfirmAppServiceInformation,
+                "Does all of the information on your App Service and custom hostname look correct?",
+                "Please confirm that the information on your App Service and custom hostname is correct.",
+                promptStyle: PromptStyle.Auto);
+    }
+
+    public async Task ConfirmAppServiceInformation(IDialogContext context, IAwaitable<bool> argument)
+    {
+        var confirm = await argument;
+        if (confirm)
+        {
+            await context.PostAsync("Thank you for confirming all of the information in regards to your App Service and custom hostname.");
+            context.Wait(MessageReceivedAsync);
+        }
+        else
+        {
+            //await context.PostAsync("Let's get the right custom hostname.");
+            context.Wait(MessageReceivedAsync);
+        }
     }
 
     // This is my default end point for now. Might have to insert this in other parts of the dialog to allow the user to restart after certain steps
