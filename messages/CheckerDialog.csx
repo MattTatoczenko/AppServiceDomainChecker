@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Connector;
@@ -131,26 +132,39 @@ public class CheckerDialog : IDialog<object>
     {
         var message = await argument;
 
-        // TODO: do some checks on the name. Shouldn't have periods. Can have dashes, letters, and numbers. Possibly has parentheses too
-        /* if (message is valid){
-         *     Confirm the name
-         * }
-         * else {
-         *   do a context.PostAsync("The App Service name entered is invalid. Please re-enter it");
-         *   Send them back to AskAppServiceName
-         *   }
-         *   */
+        // TODO: Move the pattern and check code to a separate class/method
 
-        await context.PostAsync($"The name of your App Service is {message}");
+        string pattern = @"^[a-z0-9][-a-z0-9]*[a-z0-9]$";
 
-        this.appService.AppServiceName = message;
+        bool validAppServiceName = false;
+        try
+        {
+            validAppServiceName = Regex.IsMatch(message, pattern, RegexOptions.None, TimeSpan.FromMilliseconds(2000));
+        }
+        catch (RegexMatchTimeoutException e)
+        {
+            Console.WriteLine($"Timed out after {e.MatchTimeout} seconds matching {e.Input}");
+        }
 
-        PromptDialog.Confirm(
-                context,
-                ConfirmAppServiceName,
-                $"Is {message} the correct name for your App Service?",
-                $"Please confirm that {message} is the name of your App Service.",
-                promptStyle: PromptStyle.Auto);
+        if (validAppServiceName)
+        {
+            await context.PostAsync($"The name {message} is a valid App Service name.");
+            await context.PostAsync($"The name of your App Service is {message}");
+
+            this.appService.AppServiceName = message;
+
+            PromptDialog.Confirm(
+                    context,
+                    ConfirmAppServiceName,
+                    $"Is {message} the correct name for your App Service?",
+                    $"Please confirm that {message} is the name of your App Service.",
+                    promptStyle: PromptStyle.Auto);
+        }
+        else
+        {
+            await context.PostAsync($"{message} is not a valid App Service name. Please try again.");
+            AskAppServiceName(context);
+        }
     }
 
     public async Task ConfirmAppServiceName(IDialogContext context, IAwaitable<bool> argument)
