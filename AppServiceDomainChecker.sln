@@ -41,6 +41,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dialog", "Dialog", "{7036A1
 		messages\CheckerDialog.csx = messages\CheckerDialog.csx
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Helper", "Helper", "{B9312CBA-021B-4C6B-B4F2-5C215A315189}"
+	ProjectSection(SolutionItems) = preProject
+		RegexMethods.cs = RegexMethods.cs
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,5 +66,6 @@ Global
 		{F4D9DF3B-F4E4-4E19-9053-3AF71A3189FA} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
 		{4F9DF23A-E3B9-4CFE-92FD-77F87CA1713A} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
 		{7036A18D-2B80-4085-95C9-42B12BD4F73E} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
+		{B9312CBA-021B-4C6B-B4F2-5C215A315189} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
 	EndGlobalSection
 EndGlobal

@@ -1,4 +1,5 @@
 #load "..\AppService.cs"
+#load "..\RegexMethods.cs"
 
 using System;
 using System.Collections;
@@ -13,6 +14,7 @@ using Microsoft.Bot.Connector;
 public class CheckerDialog : IDialog<object>
 {
     private AppService appService;
+
     public Task StartAsync(IDialogContext context)
     {
         try
@@ -81,26 +83,25 @@ public class CheckerDialog : IDialog<object>
     {
         var message = await argument;
 
-        // TODO: do some checks on the name. Shouldn't have periods. Can have dashes, letters, and numbers
-        /* if (message is valid){
-         *     Confirm the name
-         * }
-         * else {
-         *   do a context.PostAsync("The App Service Environment name entered is invalid. Please re-enter it");
-         *   Send them back to AskAppServiceEnvironmentName
-         *   }
-         *   */
+        // Name has to be at least 2 characters in length, can't be longer than 39 characters. Can have letters, numbers, and dashes, but it can't start or end with a dash.
+        if (RegexMethods.CheckAppServiceEnvironmentName(message))
+        {
+            await context.PostAsync($"The name {message} is a valid App Service Environment name.");
 
-        await context.PostAsync($"The name of your App Service Environment is {message}");
+            this.appService.AseName = message;
 
-        this.appService.AseName = message;
-
-        PromptDialog.Confirm(
-                context,
-                ConfirmAppServiceEnvironmentName,
-                $"Is {message} the correct name for your App Service Environment?",
-                $"Can you confirm if {message} is the name of your App Service Environment?",
-                promptStyle: PromptStyle.Auto);
+            PromptDialog.Confirm(
+                    context,
+                    ConfirmAppServiceEnvironmentName,
+                    $"Is {message} the correct name for your App Service Environment?",
+                    $"Can you confirm if {message} is the name of your App Service Environment?",
+                    promptStyle: PromptStyle.Auto);
+        }
+        else
+        {
+            await context.PostAsync($"{message} is not a valid App Service Environment name. Please enter a valid name.");
+            AskAppServiceEnvironmentName(context);
+        }
     }
 
     public async Task ConfirmAppServiceEnvironmentName(IDialogContext context, IAwaitable<bool> argument)
@@ -132,24 +133,10 @@ public class CheckerDialog : IDialog<object>
     {
         var message = await argument;
 
-        // TODO: Move the pattern and check code to a separate class/method
-
-        string pattern = @"^[a-z0-9][-a-z0-9]*[a-z0-9]$";
-
-        bool validAppServiceName = false;
-        try
-        {
-            validAppServiceName = Regex.IsMatch(message, pattern, RegexOptions.None, TimeSpan.FromMilliseconds(2000));
-        }
-        catch (RegexMatchTimeoutException e)
-        {
-            Console.WriteLine($"Timed out after {e.MatchTimeout} seconds matching {e.Input}");
-        }
-
-        if (validAppServiceName)
+        // Name has to be at least 2 characters in length, can't be longer than 60 characters. Can have letters, numbers, and dashes, but it can't start or end with a dash.
+        if (RegexMethods.CheckAppServiceName(message))
         {
             await context.PostAsync($"The name {message} is a valid App Service name.");
-            await context.PostAsync($"The name of your App Service is {message}");
 
             this.appService.AppServiceName = message;
 
@@ -226,26 +213,25 @@ public class CheckerDialog : IDialog<object>
     {
         var message = await argument;
 
-        // TODO: do some checks on the name. Shouldn't have periods. Can have dashes, letters, and numbers. Possibly has parentheses too
-        /* if (message is valid){
-         *     Confirm the name
-         * }
-         * else {
-         *   do a context.PostAsync("The Traffic Manager name entered is invalid. Please re-enter it");
-         *   Send them back to AskTrafficManagerName
-         *   }
-         *   */
+        // Name has to be at least 1 character in length, can't be longer than 63 characters. Can have letters, numbers, and dashes, but it can't start or end with a dash.
+        if (RegexMethods.CheckTrafficManagerName(message))
+        {
+            await context.PostAsync($"The name {message} is a valid Traffic Manager name.");
 
-        await context.PostAsync($"The name of your Traffic Manager is {message}");
+            this.appService.TmName = message;
 
-        this.appService.TmName = message;
-
-        PromptDialog.Confirm(
-                context,
-                ConfirmTrafficManagerName,
-                $"Is {message} the correct name for your Traffic Manager?",
-                $"Please confirm that {message} is the name of your Traffic Manager.",
-                promptStyle: PromptStyle.Auto);
+            PromptDialog.Confirm(
+                    context,
+                    ConfirmTrafficManagerName,
+                    $"Is {message} the correct name for your Traffic Manager?",
+                    $"Please confirm that {message} is the name of your Traffic Manager.",
+                    promptStyle: PromptStyle.Auto);
+        }
+        else
+        {
+            await context.PostAsync($"{message} is not a valid Traffic Manager name.");
+            AskTrafficManagerName(context);
+        }       
     }
 
     public async Task ConfirmTrafficManagerName(IDialogContext context, IAwaitable<bool> argument)
@@ -276,7 +262,13 @@ public class CheckerDialog : IDialog<object>
     {
         var message = await argument;
 
-        // TODO: Check the hostname with a regular expression. Need to lookup the RFC on hostnames
+        // TODO: Check the hostname with a regular expression. Can have dashes, numbers, and letters plus deliminating periods. 
+        // Labels - The individual levels of a domain. For example, www.microsoft.com has 3 labels: www, microsoft, and com.
+        // Each label cannot start or end with a dash. Can start with a digit or number and end with a digit or number
+        // Separate labels by periods. However, the whole hostname cannot end with a period.
+        // Each label must be between 1 and 63 characters in length inclusive
+        // Max character count for the hostname is 253 characters including deliminating periods
+
         /* if (message is valid){
          *     Confirm the name
          * }
