@@ -108,8 +108,15 @@ public class CheckerDialog : IDialog<object>
         if (confirm)
         {
             await context.PostAsync("Thank you for confirming the name of your App Service Environment!");
-            await context.PostAsync("Let's get the name of your App Service.");
-            AskAppServiceName(context);
+            if (receivedAllCustomerInformation)
+            {
+                await ShowAppServiceInformation(context, null);
+            }
+            else
+            {
+                await context.PostAsync("Let's get the name of your App Service.");
+                AskAppServiceName(context);
+            }
         }
         else
         {
@@ -158,8 +165,15 @@ public class CheckerDialog : IDialog<object>
         if (confirm)
         {
             await context.PostAsync("Thank you for confirming the name of your App Service!");
-            await context.PostAsync("Let's check if you are using Traffic Manager.");
-            CheckForTrafficManager(context);
+            if (receivedAllCustomerInformation)
+            {
+                await ShowAppServiceInformation(context, null);
+            }
+            else
+            {
+                await context.PostAsync("Let's check if you are using Traffic Manager.");
+                CheckForTrafficManager(context);
+            }
         }
         else
         {
@@ -235,7 +249,14 @@ public class CheckerDialog : IDialog<object>
         if (confirm)
         {
             await context.PostAsync("Thank you for confirming the name of your Traffic Manager!");
-            AskCustomHostname(context);
+            if (receivedAllCustomerInformation)
+            {
+                await ShowAppServiceInformation(context, null);
+            }
+            else
+            {
+                AskCustomHostname(context);
+            }
         }
         else
         {
@@ -304,6 +325,8 @@ public class CheckerDialog : IDialog<object>
     {
         await context.PostAsync("Here's all of the information on your App Service and custom hostname.");
 
+        receivedAllCustomerInformation = true;
+
         if (this.appService.UsingTM)
         {
             await context.PostAsync($"Traffic Manager name: {this.appService.TmName}");
@@ -340,6 +363,62 @@ public class CheckerDialog : IDialog<object>
         }
         else
         {
+            await context.PostAsync("Let's figure out what to change then.");
+            AskAppServiceInformationToChange(context);
+        }
+    }
+
+    void AskAppServiceInformationToChange(IDialogContext context)
+    {
+        List<string> appServiceInfoOptions = new List<string>();
+
+        if (this.appService.UsingTM)
+        {
+            appServiceInfoOptions.Add("Traffic Manager name");
+        }
+
+        if (this.appService.IsASE)
+        {
+            appServiceInfoOptions.Add("App Service Environment name");
+        }
+        appServiceInfoOptions.Add("App Service name");
+        appServiceInfoOptions.Add("Custom hostname");
+        appServiceInfoOptions.Add("None. It was all correct.");
+
+        PromptDialog.Choice(
+            context,
+            GetAppServiceInformationToChange,
+            appServiceInfoOptions,
+            "What information on your App Service does not look right?",
+            promptStyle: PromptStyle.Auto);
+    }
+
+    public async Task GetAppServiceInformationToChange(IDialogContext context, IAwaitable<string> argument)
+    {
+        var message = await argument;
+        if (message == "App Service name")
+        {
+            await context.PostAsync("Let's get the correct App Service name.");
+            AskAppServiceName(context);
+        }
+        else if (message == "App Service Environment name")
+        {
+            await context.PostAsync("Let's get the correct App Service Environment name.");
+            AskAppServiceEnvironmentName(context);
+        }
+        else if (message == "Traffic Manager name")
+        {
+            await context.PostAsync("Let's get the correct Traffic Manager name.");
+            AskTrafficManagerName(context);
+        }
+        else if (message == "Custom hostname")
+        {
+            await context.PostAsync("Let's get the correct custom hostname.");
+            AskCustomHostname(context);
+        }
+        else
+        {
+            await context.PostAsync("All of the information is correct. Let's proceed with checking the DNS settings.");
             context.Wait(MessageReceivedAsync);
         }
     }
