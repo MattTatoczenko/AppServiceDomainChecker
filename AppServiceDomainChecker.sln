@@ -43,7 +43,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dialog", "Dialog", "{7036A1
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Helper", "Helper", "{B9312CBA-021B-4C6B-B4F2-5C215A315189}"
 	ProjectSection(SolutionItems) = preProject
-		RegexMethods.cs = RegexMethods.cs
+		InputCheckers.cs = InputCheckers.cs
 	EndProjectSection
 EndProject
 Global

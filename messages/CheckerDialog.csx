@@ -1,5 +1,5 @@
 #load "..\AppService.cs"
-#load "..\RegexMethods.cs"
+#load "..\InputCheckers.cs"
 
 using System;
 using System.Collections;
@@ -14,12 +14,14 @@ using Microsoft.Bot.Connector;
 public class CheckerDialog : IDialog<object>
 {
     private AppService appService;
+    private bool receivedAllCustomerInformation;
 
     public Task StartAsync(IDialogContext context)
     {
         try
         {
-            context.Wait(CheckAppServiceType);
+            receivedAllCustomerInformation = false;
+            context.Wait(CheckUseOfAppServiceEnvironment);
         }
         catch (OperationCanceledException error)
         {
@@ -34,26 +36,22 @@ public class CheckerDialog : IDialog<object>
     }
 
     // This is the entry point for the dialog, but I'm not sure if that will stay. Work in progress
-    public async Task CheckAppServiceType(IDialogContext context, IAwaitable<IMessageActivity> argument)
+    public async Task CheckUseOfAppServiceEnvironment(IDialogContext context, IAwaitable<IMessageActivity> argument)
     {
         await context.PostAsync("Let's check for the type of App Service you are using.");
 
-        List<String> AppServiceOptions = new List<String>();
-        AppServiceOptions.Add("App Service Environment");
-        AppServiceOptions.Add("Traditional App Service");
-        PromptDialog.Choice(
+        PromptDialog.Confirm(
             context,
-            AfterAppServiceChoiceAsync,
-            AppServiceOptions,
-            "Is your App Service in an App Service Environment or is it a traditional App Service?",
+            ConfirmUseOfAppServiceEnvironment,
+            "Is your App Service inside of an App Service Environment?",
             promptStyle: PromptStyle.Auto);
     }
 
-    public async Task AfterAppServiceChoiceAsync(IDialogContext context, IAwaitable<string> argument)
+    public async Task ConfirmUseOfAppServiceEnvironment(IDialogContext context, IAwaitable<bool> argument)
     {
-        var message = await argument;
+        var confirm = await argument;
         this.appService = new AppService();
-        if (message == "App Service Environment")
+        if (confirm)
         {
             await context.PostAsync("You're using an App Service Environment. We'll need the name of the App Service Environment.");
             this.appService.IsASE = true;
@@ -84,11 +82,11 @@ public class CheckerDialog : IDialog<object>
         var message = await argument;
 
         // Name has to be at least 2 characters in length, can't be longer than 39 characters. Can have letters, numbers, and dashes, but it can't start or end with a dash.
-        if (RegexMethods.CheckAppServiceEnvironmentName(message))
+        if (InputCheckers.CheckAppServiceEnvironmentName(message))
         {
             await context.PostAsync($"The name {message} is a valid App Service Environment name.");
 
-            this.appService.AseName = message;
+            this.appService.AseName = message.ToLower();
 
             PromptDialog.Confirm(
                     context,
@@ -134,11 +132,11 @@ public class CheckerDialog : IDialog<object>
         var message = await argument;
 
         // Name has to be at least 2 characters in length, can't be longer than 60 characters. Can have letters, numbers, and dashes, but it can't start or end with a dash.
-        if (RegexMethods.CheckAppServiceName(message))
+        if (InputCheckers.CheckAppServiceName(message))
         {
             await context.PostAsync($"The name {message} is a valid App Service name.");
 
-            this.appService.AppServiceName = message;
+            this.appService.AppServiceName = message.ToLower();
 
             PromptDialog.Confirm(
                     context,
@@ -170,9 +168,6 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
-    /* Need to figure out if I should have one of these for each type, ASE or traditional App Service. 
-     * This way I can create a single instance of a class like ASEAppService, TradAppService, ASEAppServiceWithTM, and TradAppServiceWithTM. Still working on that
-     * */
     void CheckForTrafficManager(IDialogContext context)
     {
         PromptDialog.Confirm(
@@ -214,11 +209,11 @@ public class CheckerDialog : IDialog<object>
         var message = await argument;
 
         // Name has to be at least 1 character in length, can't be longer than 63 characters. Can have letters, numbers, and dashes, but it can't start or end with a dash.
-        if (RegexMethods.CheckTrafficManagerName(message))
+        if (InputCheckers.CheckTrafficManagerName(message))
         {
             await context.PostAsync($"The name {message} is a valid Traffic Manager name.");
 
-            this.appService.TmName = message;
+            this.appService.TmName = message.ToLower();
 
             PromptDialog.Confirm(
                     context,
@@ -262,32 +257,32 @@ public class CheckerDialog : IDialog<object>
     {
         var message = await argument;
 
-        // TODO: Check the hostname with a regular expression. Can have dashes, numbers, and letters plus deliminating periods. 
-        // Labels - The individual levels of a domain. For example, www.microsoft.com has 3 labels: www, microsoft, and com.
-        // Each label cannot start or end with a dash. Can start with a digit or number and end with a digit or number
-        // Separate labels by periods. However, the whole hostname cannot end with a period.
-        // Each label must be between 1 and 63 characters in length inclusive
-        // Max character count for the hostname is 253 characters including deliminating periods
+        /* Hostname validation checks:
+         * Labels - The individual levels of a domain. For example, www.microsoft.com has 3 labels: www, microsoft, and com.
+         * Each label cannot start or end with a dash. Can start with a digit or number and end with a digit or number.
+         * Separate labels by periods. However, the whole hostname cannot end with a period.
+         * Each label must be between 1 and 63 characters in length inclusive.
+         * Max character count for the hostname is 253 characters including deliminating periods. See https://blogs.msdn.microsoft.com/oldnewthing/20120412-00/?p=7873/.
+         */
 
-        /* if (message is valid){
-         *     Confirm the name
-         * }
-         * else {
-         *   do a context.PostAsync("The custom hostname entered is invalid. Please re-enter it");
-         *   Send them back to AskCustomHostname
-         *   }
-         *   */
+        if (InputCheckers.CheckHostname(message))
+        {
+            await context.PostAsync($"The custom hostname of {message} is a valid hostname.");
 
-        await context.PostAsync($"The custom hostname you are checking is {message}");
+            this.appService.CustomHostname = message.ToLower();
 
-        this.appService.CustomHostname = message;
-
-        PromptDialog.Confirm(
-                context,
-                ConfirmCustomHostname,
-                $"Is {message} the correct custom hostname?",
-                $"Please confirm that {message} is the correct custom hostname.",
-                promptStyle: PromptStyle.Auto);
+            PromptDialog.Confirm(
+                    context,
+                    ConfirmCustomHostname,
+                    $"Is {message} the correct custom hostname?",
+                    $"Please confirm that {message} is the correct custom hostname.",
+                    promptStyle: PromptStyle.Auto);
+        }
+        else
+        {
+            await context.PostAsync($"The hostname of {message} is invalid. Please enter a valid hostname.");
+            AskCustomHostname(context);
+        }
     }
 
     public async Task ConfirmCustomHostname(IDialogContext context, IAwaitable<bool> argument)
@@ -345,7 +340,6 @@ public class CheckerDialog : IDialog<object>
         }
         else
         {
-            //await context.PostAsync("Let's get the right custom hostname.");
             context.Wait(MessageReceivedAsync);
         }
     }
@@ -376,7 +370,7 @@ public class CheckerDialog : IDialog<object>
         if (confirm)
         {
             await context.PostAsync("Let's restart.");
-            await CheckAppServiceType(context, null);
+            await CheckUseOfAppServiceEnvironment(context, null);
         }
         else
         {
@@ -385,3 +379,4 @@ public class CheckerDialog : IDialog<object>
         }
     }
 }
+ 
