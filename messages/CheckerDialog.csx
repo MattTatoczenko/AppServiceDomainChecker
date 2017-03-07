@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder.Dialogs;
@@ -359,7 +360,7 @@ public class CheckerDialog : IDialog<object>
         if (confirm)
         {
             await context.PostAsync("Thank you for confirming all of the information in regards to your App Service and custom hostname.");
-            context.Wait(MessageReceivedAsync);
+            await DoDNSChecks(context);
         }
         else
         {
@@ -419,8 +420,28 @@ public class CheckerDialog : IDialog<object>
         else
         {
             await context.PostAsync("All of the information is correct. Let's proceed with checking the DNS settings.");
-            context.Wait(MessageReceivedAsync);
+            await DoDNSChecks(context);
         }
+    }
+
+    public async Task DoDNSChecks(IDialogContext context)
+    {
+        // var host = await Dns.GetHostEntryAsync(this.appService.CustomHostname);
+        IPHostEntry host = Dns.GetHostEntry(this.appService.CustomHostname);
+
+        await context.PostAsync($"There are {host.AddressList.Length} IPs associated with this hostname");
+
+        if(host.Aliases.Length > 0)
+        {
+            await context.PostAsync($"The Alias is {host.Aliases[0]}");
+        }
+
+        for(int i = 0; i < host.AddressList.Length; i++)
+        {
+            await context.PostAsync($"The IP {host.AddressList[i]}");
+        }
+
+        context.Wait(MessageReceivedAsync);
     }
 
     // This is my default end point for now. Might have to insert this in other parts of the dialog to allow the user to restart after certain steps
