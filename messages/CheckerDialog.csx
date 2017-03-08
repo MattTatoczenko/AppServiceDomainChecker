@@ -1,5 +1,6 @@
 #load "..\AppService.cs"
 #load "..\InputCheckers.cs"
+#load "..\DnsChecks.cs"
 
 using System;
 using System.Collections;
@@ -69,7 +70,7 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
-    void AskAppServiceEnvironmentName(IDialogContext context)
+    public void AskAppServiceEnvironmentName(IDialogContext context)
     {
         PromptDialog.Text(
             context,
@@ -427,6 +428,7 @@ public class CheckerDialog : IDialog<object>
     public async Task DoDNSChecks(IDialogContext context)
     {
         // var host = await Dns.GetHostEntryAsync(this.appService.CustomHostname);
+        /*(
         IPHostEntry host = Dns.GetHostEntry(this.appService.CustomHostname);
 
         await context.PostAsync($"There are {host.AddressList.Length} IPs associated with this hostname");
@@ -439,7 +441,10 @@ public class CheckerDialog : IDialog<object>
         for(int i = 0; i < host.AddressList.Length; i++)
         {
             await context.PostAsync($"The IP {host.AddressList[i]}");
-        }
+        } */
+        await context.PostAsync("We'll implement DNS checks shortly.");
+
+        await DnsChecks.StartDnsChecks(context, this.appService);
 
         context.Wait(MessageReceivedAsync);
     }
