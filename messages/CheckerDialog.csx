@@ -427,21 +427,6 @@ public class CheckerDialog : IDialog<object>
 
     public async Task DoDNSChecks(IDialogContext context)
     {
-        // var host = await Dns.GetHostEntryAsync(this.appService.CustomHostname);
-        /*(
-        IPHostEntry host = Dns.GetHostEntry(this.appService.CustomHostname);
-
-        await context.PostAsync($"There are {host.AddressList.Length} IPs associated with this hostname");
-
-        if(host.Aliases.Length > 0)
-        {
-            await context.PostAsync($"The Alias is {host.Aliases[0]}");
-        }
-
-        for(int i = 0; i < host.AddressList.Length; i++)
-        {
-            await context.PostAsync($"The IP {host.AddressList[i]}");
-        } */
         await context.PostAsync("We'll implement DNS checks shortly.");
 
         await DnsChecks.StartDnsChecks(context, this.appService);
@@ -475,6 +460,7 @@ public class CheckerDialog : IDialog<object>
         if (confirm)
         {
             await context.PostAsync("Let's restart.");
+            receivedAllCustomerInformation = false;
             await CheckUseOfAppServiceEnvironment(context, null);
         }
         else
