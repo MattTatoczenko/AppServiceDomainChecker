@@ -3,6 +3,9 @@ using static AppService;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Microsoft.Bot.Builder.Dialogs;
+using System.Net;
+using ARSoft.Tools.Net;
+using ARSoft.Tools.Net.Dns;
 
 public class DnsChecks
 {
@@ -13,78 +16,46 @@ public class DnsChecks
 
     public static async Task StartDnsChecks(IDialogContext context, AppService appService)
     {
-        List<string> aRecords = GetDnsARecords(appService);
+        List<IPAddress> aRecords = GetDnsARecords(appService);
 
-        foreach (string aRecord in aRecords)
+        foreach (IPAddress aRecord in aRecords)
         {
-            await context.PostAsync($"A Record: {aRecord}");
+            await context.PostAsync($"A Record: {aRecord.ToString()}");
+        }
+
+        List<string> cNameRecords = GetDnsCNameRecords(appService);
+        foreach (string cName in cNameRecords)
+        {
+            await context.PostAsync($"CNAME Record: {cName}");
         }
         
     }
 
-    private static List<string> GetDnsARecords(AppService appService)
+    private static List<IPAddress> GetDnsARecords(AppService appService)
     {
-        List<string> aRecords = new List<string>();
-        string output;
-        string pattern = @"\r\nAddress(es)*:\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})";
-        string pattern2 = @"\r\n\t\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})*";
-        pattern = String.Concat(appService.CustomHostname, pattern);
+        IDnsResolver resolver = new DnsStubResolver();
+        List<IPAddress> addresses = DnsResolverExtensions.ResolveHost(resolver, appService.CustomHostname);
 
-        var startInfo = new ProcessStartInfo("nslookup");
-        startInfo.Arguments = string.Format("-type=A {0}", appService.CustomHostname);
-        startInfo.RedirectStandardOutput = true;
-        startInfo.UseShellExecute = false;
-        startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        return addresses;
+    }
 
-        using (var cmd = Process.Start(startInfo))
+    private static List<string> GetDnsCNameRecords(AppService appService)
+    {
+        IDnsResolver resolver = new DnsStubResolver();
+        List<CNameRecord> cNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.CustomHostname, RecordType.CName, RecordClass.Any);
+
+        List<string> cNames = new List<string>();
+        foreach (CNameRecord cName in cNameRecords)
         {
-            output = cmd.StandardOutput.ReadToEnd();
+            cNames.Add(cName.CanonicalName.ToString());
         }
-
-        MatchCollection matches = Regex.Matches(output, pattern, RegexOptions.IgnoreCase);
-        MatchCollection matches2 = Regex.Matches(output, pattern2, RegexOptions.IgnoreCase);
-        foreach (Match match in matches)
-        {
-            if (match.Success)
-                aRecords.Add(match.Groups[2].Value);
-        }
-        foreach (Match match in matches2)
-        {
-            if (match.Success)
-            {
-                aRecords.Add(match.Groups[1].Value);
-            }
-        }
-
-        return aRecords;
+        return cNames;
     }
 
     private static List<string> GetDnsTxtRecords(AppService appService)
     {
         List<string> txtRecords = new List<string>();
-        string output;
-        string pattern = string.Format(@"{ 0}\s*text =\s*""([\w\-\=]*)""", appService.CustomHostname);
-
-
-        var startInfo = new ProcessStartInfo("nslookup");
-        startInfo.Arguments = string.Format("-type=TXT {0}", appService.CustomHostname);
-        startInfo.RedirectStandardOutput = true;
-        startInfo.UseShellExecute = false;
-        startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-
-        using (var cmd = Process.Start(startInfo))
-        {
-            output = cmd.StandardOutput.ReadToEnd();
-        }
-
-
-        MatchCollection matches = Regex.Matches(output, pattern, RegexOptions.IgnoreCase);
-        foreach (Match match in matches)
-        {
-            if (match.Success)
-                txtRecords.Add(match.Groups[1].Value);
-        }
-
+        txtRecords.Add("stuff");
         return txtRecords;
     }
 }
