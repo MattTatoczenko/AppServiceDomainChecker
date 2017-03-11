@@ -12,6 +12,12 @@ public class DnsChecks
 {
     public static async Task StartDnsChecks(IDialogContext context, AppService appService)
     {
+        List<IPAddress> appServiceAddresses = GetAppServiceIPAddress(appService);
+        foreach (IPAddress appServiceAddress in appServiceAddresses)
+        {
+            await context.PostAsync($"App Service IP: {appServiceAddress.ToString()}");
+        }
+
         List<string> aRecords = GetHostnameARecords(appService);
         foreach (string aRecord in aRecords)
         {
@@ -28,8 +34,20 @@ public class DnsChecks
 
     private static List<IPAddress> GetAppServiceIPAddress(AppService appService)
     {
+        string fullAppServiceURL = "";
+
+        if (appService.IsASE)
+        { 
+            fullAppServiceURL = appService.AppServiceName + "." + appService.AseName + ".p." + appService.AppServiceURLEnding;
+        }
+        else
+        {
+            fullAppServiceURL = appService.AppServiceName + "." + appService.AppServiceURLEnding;
+        }
+
+
         IDnsResolver resolver = new DnsStubResolver();
-        List<IPAddress> addresses = DnsResolverExtensions.ResolveHost(resolver, appService.CustomHostname);
+        List<IPAddress> addresses = DnsResolverExtensions.ResolveHost(resolver, fullAppServiceURL);
 
         return addresses;
     }

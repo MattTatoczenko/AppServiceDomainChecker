@@ -9,6 +9,9 @@ public class AppService
     private string appServiceName;
     private string customHostname;
 
+    public string AppServiceURLEnding = "azurewebsites.net";
+    public string TrafficManagerURLEnding = "trafficmanager.net";
+
     public bool IsASE
     {
         get
