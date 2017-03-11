@@ -37,7 +37,14 @@ public class CheckerDialog : IDialog<object>
         return Task.CompletedTask;
     }
 
-    // This is the entry point for the dialog, but I'm not sure if that will stay. Work in progress
+    /// <summary>
+    /// Starting point for the App Service Domain Checker dialog. This starts major section 1 of 4, asking the user about an App Service Environment they may or may not be using.
+    /// Presents a dialog box confirming whether the user is using an App Service Environment or not.
+    /// Users will choose "Yes" or "No".
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to have a confirmation dialog about the use of an App Service Environment.</param>
+    /// <param name="argument">Supposed to be the argument a user puts into the chat window. Not used by this method.</param>
+    /// <returns>No returns.</returns>
     public async Task CheckUseOfAppServiceEnvironment(IDialogContext context, IAwaitable<IMessageActivity> argument)
     {
         await context.PostAsync("Let's check for the type of App Service you are using.");
@@ -49,6 +56,15 @@ public class CheckerDialog : IDialog<object>
             promptStyle: PromptStyle.Auto);
     }
 
+    /// <summary>
+    /// Confirm whether the user is using an App Service Environment or not.
+    /// If they are, we will need to get the name.
+    /// If not, we will ask for information on the App Service instead.
+    /// This is also where we initialize the instance variable appService to hold the user input.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to send responses back to the user about their option choice.</param>
+    /// <param name="argument">A boolean value. True if the user is using an App Service Environment. False if they are not.</param>
+    /// <returns>No returns.</returns>
     public async Task ConfirmUseOfAppServiceEnvironment(IDialogContext context, IAwaitable<bool> argument)
     {
         var confirm = await argument;
@@ -70,6 +86,10 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
+    /// <summary>
+    /// Ask the user the name of their App Service Environment. User will input text into the chat window.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to ask the user the name of their App Service Environment.</param>
     public void AskAppServiceEnvironmentName(IDialogContext context)
     {
         PromptDialog.Text(
@@ -79,6 +99,14 @@ public class CheckerDialog : IDialog<object>
             "Please enter the name of your App Service Environment.");
     }
 
+    /// <summary>
+    /// Used to take in the App Service Environment name and validate it. Need to make sure the user inputs an acceptable name that's allowed for App Service Environment naming.
+    /// If the user puts in a valid name, we will then prompt them to confirm that name is correct. The user will choose "Yes" or "No" for that.
+    /// If the user puts in an invalid name, we will ask them for the name again.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to send messages back to the user based on their input and also have a confirmation dialog to confirm the App Service Environment name.</param>
+    /// <param name="argument">The name that the user provides for their App Service Environment.</param>
+    /// <returns>No returns.</returns>
     public async Task GetAppServiceEnvironmentName(IDialogContext context, IAwaitable<string> argument)
     {
         var message = await argument;
@@ -86,7 +114,7 @@ public class CheckerDialog : IDialog<object>
         // Name has to be at least 2 characters in length, can't be longer than 39 characters. Can have letters, numbers, and dashes, but it can't start or end with a dash.
         if (InputCheckers.CheckAppServiceEnvironmentName(message))
         {
-            await context.PostAsync($"The name {message} is a valid App Service Environment name.");
+            await context.PostAsync($"The name {message} is an acceptable App Service Environment name.");
 
             this.appService.AseName = message.ToLower();
 
@@ -99,20 +127,32 @@ public class CheckerDialog : IDialog<object>
         }
         else
         {
-            await context.PostAsync($"{message} is not a valid App Service Environment name. Please enter a valid name.");
+            await context.PostAsync($"{message} is not an acceptable App Service Environment name. Please enter a valid name.");
             AskAppServiceEnvironmentName(context);
         }
     }
 
+    /// <summary>
+    /// Confirming the App Service Environment name. Used in case a user enters the name incorrectly (mistypes).
+    /// In case a user needed to adjust the App Service Environment at the end of the information gathering process, we will go from here back to showing all that collected information.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used here to provide text updates to the users.</param>
+    /// <param name="argument">A boolean value. True if the user confirms that the App Service Environment is the one they want to use. False if the name needs to be adjusted.</param>
+    /// <returns>No returns.</returns>
     public async Task ConfirmAppServiceEnvironmentName(IDialogContext context, IAwaitable<bool> argument)
     {
         var confirm = await argument;
         if (confirm)
         {
             await context.PostAsync("Thank you for confirming the name of your App Service Environment!");
+
+            /* 
+             * If we are back here due the user needing to change the App Service Environment name after collecting all of the information, we will send them back to the step where we present all the entered information.
+             * This is to prevent the user from having to enter all of the information again after this point, which would be the App Service name, possibly the Traffic Manager name, and the hostname to check.
+             * */
             if (receivedAllCustomerInformation)
             {
-                await ShowAppServiceInformation(context, null);
+                await ShowAppServiceInformation(context);
             }
             else
             {
@@ -127,6 +167,11 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
+    /// <summary>
+    /// This starts major section 2 of 4 of asking for user input. This section is about asking the user about the App Service.
+    /// Prompt to ask the user for the name of their App Service. User will type in the name into the chat window.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. It is used to make the prompt to the user.</param>
     void AskAppServiceName(IDialogContext context)
     {
         PromptDialog.Text(
@@ -136,6 +181,14 @@ public class CheckerDialog : IDialog<object>
             "Please enter the name of your App Service.");
     }
 
+    /// <summary>
+    /// Take the App Service name that the user enters into the chat window and check that it is in the acceptable form for an App Service name.
+    /// If the name is acceptable, we will ask the user to confirm that the name they entered is correct.
+    /// If the name is unacceptable, we will ask the user to enter an acceptable name, sending them back to the AskAppServiceName method.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used for text updates to the users and to also create a confirmation dialog box.</param>
+    /// <param name="argument">The name that the user entered as their App Service name.</param>
+    /// <returns>No returns.</returns>
     public async Task GetAppServiceName(IDialogContext context, IAwaitable<string> argument)
     {
         var message = await argument;
@@ -143,7 +196,7 @@ public class CheckerDialog : IDialog<object>
         // Name has to be at least 2 characters in length, can't be longer than 60 characters. Can have letters, numbers, and dashes, but it can't start or end with a dash.
         if (InputCheckers.CheckAppServiceName(message))
         {
-            await context.PostAsync($"The name {message} is a valid App Service name.");
+            await context.PostAsync($"The name {message} is an acceptable App Service name.");
 
             this.appService.AppServiceName = message.ToLower();
 
@@ -161,15 +214,27 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
+    /// <summary>
+    /// Confirmation to ensure the App Service name the user entered is what they meant to enter.
+    /// If the user is back at this point just to adjust the App Service name, we will send them back to the point of showing all the information they entered. This avoids them having to re-enter correct information.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to send update messages to the users.</param>
+    /// <param name="argument">A boolean value. True if the customer meant to enter the App Service name. False if the customer mistyped the name and needs to re-enter it.</param>
+    /// <returns>No returns.</returns>
     public async Task ConfirmAppServiceName(IDialogContext context, IAwaitable<bool> argument)
     {
         var confirm = await argument;
         if (confirm)
         {
             await context.PostAsync("Thank you for confirming the name of your App Service!");
+
+            /* 
+             * If we are back here due the user needing to change the App Service name after collecting all of the information, we will send them back to the step where we present all the entered information.
+             * This is to prevent the user from having to enter all of the information again after this point, which would possibly be the Traffic Manager name and the hostname to check.
+             * */
             if (receivedAllCustomerInformation)
             {
-                await ShowAppServiceInformation(context, null);
+                await ShowAppServiceInformation(context);
             }
             else
             {
@@ -184,6 +249,11 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
+    /// <summary>
+    /// Starting major section 3 of 4 in asking for user input. This section revolves around the potential use of Traffic Manager.
+    /// Ask the user if they use Traffic Manager.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to present a confirmation prompt to the user about whether they use Traffic Manager or not.</param>
     void CheckForTrafficManager(IDialogContext context)
     {
         PromptDialog.Confirm(
@@ -194,6 +264,14 @@ public class CheckerDialog : IDialog<object>
                 promptStyle: PromptStyle.Auto);
     }
 
+    /// <summary>
+    /// Used to confirm the use of Traffic Manager. 
+    /// If they are, we will need the name of the Traffic Manager.
+    /// If not, move on to ask the user about the custom hostname.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to provide text updates to the user based on their option.</param>
+    /// <param name="argument">A boolean value. If True, the user is using Traffic Manager. If False, the user is not.</param>
+    /// <returns></returns>
     public async Task ConfirmUseOfTrafficManager(IDialogContext context, IAwaitable<bool> argument)
     {
         var confirm = await argument;
@@ -211,6 +289,10 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
+    /// <summary>
+    /// Ask the user the name of their Traffic Manager.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to present a prompt to the user and they will respond by putting in text into the chat window.</param>
     void AskTrafficManagerName(IDialogContext context)
     {
         PromptDialog.Text(
@@ -220,6 +302,14 @@ public class CheckerDialog : IDialog<object>
             "Please enter the name of your Traffic Manager.");
     }
 
+    /// <summary>
+    /// Take in the name the user put in for their Traffic Manager name. We also check that the name is acceptable.
+    /// If the name is acceptable, we will ask the user to confirm that this name is correct.
+    /// If the name is unacceptable, we will ask the user to input the Traffic Manager name again.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to provide text updates to the users based on their choice and to also provide a confirmation prompt.</param>
+    /// <param name="argument">The Traffic Manager name that the user put into the chat window.</param>
+    /// <returns>No returns.</returns>
     public async Task GetTrafficManagerName(IDialogContext context, IAwaitable<string> argument)
     {
         var message = await argument;
@@ -227,7 +317,7 @@ public class CheckerDialog : IDialog<object>
         // Name has to be at least 1 character in length, can't be longer than 63 characters. Can have letters, numbers, and dashes, but it can't start or end with a dash.
         if (InputCheckers.CheckTrafficManagerName(message))
         {
-            await context.PostAsync($"The name {message} is a valid Traffic Manager name.");
+            await context.PostAsync($"The name {message} is an acceptable Traffic Manager name.");
 
             this.appService.TmName = message.ToLower();
 
@@ -245,15 +335,27 @@ public class CheckerDialog : IDialog<object>
         }       
     }
 
+    /// <summary>
+    /// Confirm that the user put in the correct Traffic Manager name.
+    /// If the user is at this point but has entered all of the other information about their App Service, we will send them to the end of the input sequence to show them the information they have entered.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to provide text updates to the user.</param>
+    /// <param name="argument">A boolean value. If True, they have entered in the correct Traffic Manager name. If False, the user meant to enter a different name, so we will send them back to enter the right name.</param>
+    /// <returns>No returns.</returns>
     public async Task ConfirmTrafficManagerName(IDialogContext context, IAwaitable<bool> argument)
     {
         var confirm = await argument;
         if (confirm)
         {
             await context.PostAsync("Thank you for confirming the name of your Traffic Manager!");
+
+            /* 
+             * If we are back here due the user needing to change the Traffic Manager name after collecting all of the information, we will send them back to the step where we present all the entered information.
+             * This is to prevent the user from having to enter the hostname to check again after this point.
+             * */
             if (receivedAllCustomerInformation)
             {
-                await ShowAppServiceInformation(context, null);
+                await ShowAppServiceInformation(context);
             }
             else
             {
@@ -267,6 +369,11 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
+    /// <summary>
+    /// Starting major section 4 of 4 of asking the user for input. This major section involves asking the user for the hostname to check.
+    /// This method asks the user to enter their custom hostname.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Ask the user for the hostname to check.</param>
     void AskCustomHostname(IDialogContext context)
     {
         PromptDialog.Text(
@@ -276,21 +383,29 @@ public class CheckerDialog : IDialog<object>
             "Please enter the custom hostname you are trying to check.");
     }
 
+    /// <summary>
+    /// Take in the hostname to check from the user. It also needs to meet RFC1123 standards.
+    /// If the hostname meets the RFC1123 standards, we will ask the user to confirm that this is the correct hostname.
+    /// If the hostname does not meet the standards, we will ask the user to input the hostname again.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to provide text updates to the user and present a confirmation dialog to the user.</param>
+    /// <param name="argument">The hostname that the user entered into the chat window.</param>
+    /// <returns>No returns.</returns>
     public async Task GetCustomHostname(IDialogContext context, IAwaitable<string> argument)
     {
         var message = await argument;
 
         /* Hostname validation checks:
+         * From RFC1123: https://tools.ietf.org/html/rfc1123#page-13
          * Labels - The individual levels of a domain. For example, www.microsoft.com has 3 labels: www, microsoft, and com.
          * Each label cannot start or end with a dash. Can start with a digit or number and end with a digit or number.
          * Separate labels by periods. However, the whole hostname cannot end with a period.
          * Each label must be between 1 and 63 characters in length inclusive.
          * Max character count for the hostname is 253 characters including deliminating periods. See https://blogs.msdn.microsoft.com/oldnewthing/20120412-00/?p=7873/.
          */
-
         if (InputCheckers.CheckHostname(message))
         {
-            await context.PostAsync($"The custom hostname of {message} is a valid hostname.");
+            await context.PostAsync($"The custom hostname of {message} is an acceptable hostname.");
 
             this.appService.CustomHostname = message.ToLower();
 
@@ -308,13 +423,21 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
+    /// <summary>
+    /// Confirm that the hostname the user entered is the one they meant to enter.
+    /// If they confirm it, we will finish asking the user to input data and confirm all the data entered so far is correct
+    /// If they need to adjust the hostname, send them back to the prompt to have them enter the right hostname.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="argument"></param>
+    /// <returns></returns>
     public async Task ConfirmCustomHostname(IDialogContext context, IAwaitable<bool> argument)
     {
         var confirm = await argument;
         if (confirm)
         {
             await context.PostAsync("Thank you for confirming your custom hostname!");
-            await ShowAppServiceInformation(context, null);
+            await ShowAppServiceInformation(context);
         }
         else
         {
@@ -323,7 +446,13 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
-    public async Task ShowAppServiceInformation(IDialogContext context, IAwaitable<IMessageActivity> argument)
+    /// <summary>
+    /// Use individual text updates to present all of the user information back to them. 
+    /// This is used to have them check and confirm that all of the information is correct.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to provide all of the text updates to the user with all the information they have entered so far.</param>
+    /// <returns>No returns.</returns>
+    public async Task ShowAppServiceInformation(IDialogContext context)
     {
         await context.PostAsync("Here's all of the information on your App Service and custom hostname.");
 
@@ -345,6 +474,10 @@ public class CheckerDialog : IDialog<object>
         AskForConfirmationOfAppServiceInformation(context);
     }
 
+    /// <summary>
+    /// Present a prompt to have the user confirm that all the entered information is correct.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to present the confirmation prompt to the user.</param>
     public void AskForConfirmationOfAppServiceInformation(IDialogContext context)
     {
         PromptDialog.Confirm(
@@ -355,6 +488,14 @@ public class CheckerDialog : IDialog<object>
                 promptStyle: PromptStyle.Auto);
     }
 
+    /// <summary>
+    /// Confirmation section to ensure all the user entered information is correct.
+    /// If it is, we will move onto the next big section of the bot, the DNS checks.
+    /// If there is something that is incorrect, we will move to figure out what is incorrect.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to provide text updates based on the user's choice.</param>
+    /// <param name="argument">A boolean value. If True, all the information is correct. If False, the customer sees that something's wrong, so let's figure that out.</param>
+    /// <returns>No returns.</returns>
     public async Task ConfirmAppServiceInformation(IDialogContext context, IAwaitable<bool> argument)
     {
         var confirm = await argument;
@@ -370,6 +511,11 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
+    /// <summary>
+    /// Build a choice prompt to ask the user which part they have to change: App Service Environment name, Traffic Manager name, App Service name, custom hostname.
+    /// Also provide an option if they mistakenly got here to go on to the DNS checks.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to prompt the user with choices of options to change.</param>
     void AskAppServiceInformationToChange(IDialogContext context)
     {
         List<string> appServiceInfoOptions = new List<string>();
@@ -395,6 +541,12 @@ public class CheckerDialog : IDialog<object>
             promptStyle: PromptStyle.Auto);
     }
 
+    /// <summary>
+    /// Based on what the user needs to change, we will send them back to that point to re-enter the information.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used mainly for text updates based on the user choices.</param>
+    /// <param name="argument">String input based on the choice the user needs to change.</param>
+    /// <returns>No returns.</returns>
     public async Task GetAppServiceInformationToChange(IDialogContext context, IAwaitable<string> argument)
     {
         var message = await argument;
@@ -425,16 +577,28 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
+    /// <summary>
+    /// Checking DNS records for the hostname entered as well as the App Service names.
+    /// Will need to ensure the hostname is set up properly and configured to use the App Service or at least the Traffic Manager.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to provide a text update to the user.</param>
+    /// <returns>No returns.</returns>
     public async Task DoDNSChecks(IDialogContext context)
     {
-        await context.PostAsync("We'll implement DNS checks shortly.");
+        await context.PostAsync("Let's pull some information on the hostname entered.");
 
         await DnsChecks.StartDnsChecks(context, this.appService);
 
         context.Wait(MessageReceivedAsync);
     }
 
-    // This is my default end point for now. Might have to insert this in other parts of the dialog to allow the user to restart after certain steps
+    /// <summary>
+    /// Default ending point right now. Once the user is here, we will repeat what they enter.
+    /// If the user enters "restart" exactly, we will ask them if they really want to restart and start the process all over again.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to either repeat what the user enters or provide a confirmation prompt.</param>
+    /// <param name="argument">Any message the user enters into the chat window.</param>
+    /// <returns>NO returns.</returns>
     public virtual async Task MessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> argument)
     {
         var message = await argument;
@@ -453,7 +617,16 @@ public class CheckerDialog : IDialog<object>
             context.Wait(MessageReceivedAsync);
         }
     }
-    
+
+    /// <summary>
+    /// Confirm whether the user wants to restart the whole process or not. 
+    /// If so, restart and ask them for information to enter.
+    /// If not, keep just repeating what they enter.
+    /// NOTE: This will be changed later on.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to provide text updates based on the user's choice.</param>
+    /// <param name="argument">A boolean value. If True, the user wants to restart the whole process. If False, keep doing what you're doing.</param>
+    /// <returns></returns>
     public async Task AfterRestartAsync(IDialogContext context, IAwaitable<bool> argument)
     {
         var confirm = await argument;
@@ -470,4 +643,3 @@ public class CheckerDialog : IDialog<object>
         }
     }
 }
- 

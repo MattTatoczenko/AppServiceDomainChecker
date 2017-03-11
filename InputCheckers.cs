@@ -10,6 +10,12 @@ public class InputCheckers
     // From RFC1123: https://tools.ietf.org/html/rfc1123#page-13 and https://blogs.msdn.microsoft.com/oldnewthing/20120412-00/?p=7873/
     private static int maxHostnameLength = 253;
 
+    /// <summary>
+    /// Validate whether the name for the App Service that was entered is valid or not.
+    /// Validation information gathered from the Azure portal based on the responses given when testing various App Service names.
+    /// </summary>
+    /// <param name="appServiceName">The App Service name the user has entered</param>
+    /// <returns>A boolean value. If True, the App Service name is acceptable as an App Service name. If False, the name is not acceptable.</returns>
     public static bool CheckAppServiceName(string appServiceName)
     {
         // Name has to be at least 2 characters in length, can't be longer than 60 characters. Can have letters, numbers, and dashes, but it can't start or end with a dash.
@@ -30,6 +36,13 @@ public class InputCheckers
         return validAppServiceName;
     }
 
+    /// <summary>
+    /// Validate whether the name for the Traffic Manager that was entered is valid or not.
+    /// Validation information gathered from the Azure portal based on the responses given when testing various Traffic Manager names.
+    /// Traffic Manager naming follows the outline given in RFC1123 for labels of a hostname.
+    /// </summary>
+    /// <param name="trafficManagerName">The Traffic Manager name the user has entered.</param>
+    /// <returns>A boolean value. If True, the Traffic Manager name is acceptable as an Traffic Manager name. If False, the name is not acceptable.</returns>
     public static bool CheckTrafficManagerName(string trafficManagerName)
     {
         // Name has to be at least 1 character in length, can't be longer than 63 characters. Can have letters, numbers, and dashes, but it can't start or end with a dash.
@@ -50,6 +63,12 @@ public class InputCheckers
         return validTrafficManagerName;
     }
 
+    /// <summary>
+    /// Validate whether the name for the App Service Environment that was entered is valid or not.
+    /// Validation information gathered from the Azure portal based on the responses given when testing various App Service Environment names.
+    /// </summary>
+    /// <param name="appServiceEnvironmentName">The App Service Environment name that the user has entered.</param>
+    /// <returns>A boolean value. If True, the App Service Environment name is acceptable as an App Service Environment name. If False, the name is not acceptable.</returns>
     public static bool CheckAppServiceEnvironmentName(string appServiceEnvironmentName)
     {
         // Name has to be at least 2 characters in length, can't be longer than 39 characters. Can have letters, numbers, and dashes, but it can't start or end with a dash.
@@ -70,7 +89,11 @@ public class InputCheckers
         return validAppServiceEnvironmentName;
     }
 
-    
+    /// <summary>
+    /// Validate if the custom hostname entered is valid based on RFC 1123. See https://tools.ietf.org/html/rfc1123#page-13 for details.
+    /// </summary>
+    /// <param name="hostname">The custom hostname that the user has entered.</param>
+    /// <returns>A boolean value. If True, the custom hostname is acceptable. If False, the name is not acceptable.</returns>
     public static bool CheckHostname(string hostname)
     {
         /* Hostname validation checks:

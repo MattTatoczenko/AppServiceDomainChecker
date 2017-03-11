@@ -18,7 +18,8 @@ The bot will ask you for the following information:
 The bot will not save this information, ensuring that each check pulls the latest available public data on the App Service and the custom hostname.
 
 ## How does it check the hostname?
-This is currently under development. More to come.
+Hostname and DNS lookups are done using a C#/.Net library called ARSoft.Tools.Net. This library provides DNS lookup and resolution abilities through C# directly, making the process very easy to create.
+For more information on the library, visit the [ARSoft.Tools.Net](http://arsofttoolsnet.codeplex.com/) page hosted on CodePlex.
 
 ## Limitations on input
 The bot makes some assumptions on the various inputs it receives. 
