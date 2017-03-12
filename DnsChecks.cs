@@ -35,8 +35,6 @@ public class DnsChecks
     {
         string fullAppServiceURL = "";
 
-        await context.PostAsync($"URL so far: {fullAppServiceURL}");
-
         if (appService.IsASE)
         { 
             fullAppServiceURL = appService.AppServiceName + "." + appService.AseName + ".p." + appService.AppServiceURLEnding;
@@ -45,8 +43,6 @@ public class DnsChecks
         {
             fullAppServiceURL = appService.AppServiceName + "." + appService.AppServiceURLEnding;
         }
-
-        await context.PostAsync($"URL after deciding format: {fullAppServiceURL}");
 
         IDnsResolver resolver = new DnsStubResolver();
         List<IPAddress> addresses = DnsResolverExtensions.ResolveHost(resolver, fullAppServiceURL);
