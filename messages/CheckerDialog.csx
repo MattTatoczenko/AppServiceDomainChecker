@@ -259,8 +259,8 @@ public class CheckerDialog : IDialog<object>
         PromptDialog.Confirm(
                 context,
                 ConfirmUseOfTrafficManager,
-                "Is your App Service an endpoint of a Traffic Manager?",
-                "I'm sorry, I didn't understand that. Are you using Traffic Manager for this App Service?",
+                "Are you using Traffic Manager with the hostname you are trying to check?",
+                "I'm sorry, I didn't understand that. Are you using Traffic Manager for your hostname?",
                 promptStyle: PromptStyle.Auto);
     }
 
@@ -277,13 +277,13 @@ public class CheckerDialog : IDialog<object>
         var confirm = await argument;
         if (confirm)
         {
-            await context.PostAsync("Your App Service is an endpoint of a Traffic Manager.");
+            await context.PostAsync("You are using Traffic Manager.");
             this.appService.UsingTM = true;
             AskTrafficManagerName(context);
         }
         else
         {
-            await context.PostAsync("Your App Service is not an endpoint of a Traffic Manager.");
+            await context.PostAsync("You are not using Traffic Manager.");
             this.appService.UsingTM = false;
             AskCustomHostname(context);
         }
@@ -587,8 +587,53 @@ public class CheckerDialog : IDialog<object>
     {
         await context.PostAsync("Let's pull some information on the hostname entered.");
 
-        await DnsChecks.StartDnsChecks(context, this.appService);
+        DnsChecks.GetAppServiceIPAddress(appService);
+        foreach (IPAddress appServiceAddress in appService.IPAddresses)
+        {
+            await context.PostAsync($"App Service IP: {appServiceAddress.ToString()}");
+        }
 
+        DnsChecks.GetHostnameARecords(appService);
+        foreach (string aRecord in appService.HostnameARecords)
+        {
+            await context.PostAsync($"A Record: {aRecord}");
+        }
+
+        DnsChecks.GetHostnameAwverifyRecords(appService);
+        foreach (string awverifyRecord in appService.HostnameAwverifyCNameRecords)
+        {
+            await context.PostAsync($"AWVerify CNAME record: {awverifyRecord}");
+        }
+
+        DnsChecks.GetHostnameCNameRecords(appService);
+        foreach (string cName in appService.HostnameCNameRecords)
+        {
+            await context.PostAsync($"CNAME Record: {cName}");
+        }
+
+        if (appService.UsingTM)
+        {
+            DnsChecks.GetTrafficManagerCNameRecords(appService);
+            foreach (string trafficManagerCName in appService.TrafficManagerCNameRecords)
+            {
+                await context.PostAsync($"Traffic Manager CNAME record: {trafficManagerCName}");
+            }
+        }
+
+        DnsChecks.GetHostnameTxtRecords(appService);
+        foreach (string txtRecord in appService.HostnameTxtRecords)
+        {
+            await context.PostAsync($"TXT Record: {txtRecord}");
+        }
+
+        await PresentDNSInformation(context);
+    }
+
+    public async Task PresentDNSInformation(IDialogContext context)
+    {
+        await context.PostAsync("Present information to the user based on the DNS checks done.");
+
+        await context.PostAsync("Type 'restart' to restart the domain checker. Otherwise, we will echo anything you say after this point."); 
         context.Wait(MessageReceivedAsync);
     }
 

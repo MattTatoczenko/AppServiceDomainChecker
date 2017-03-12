@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 [Serializable]
 public class AppService
 {
@@ -8,6 +9,13 @@ public class AppService
     private string tmName;
     private string appServiceName;
     private string customHostname;
+
+    private List<IPAddress> iPAddresses;
+    private List<string> hostnameARecords;
+    private List<string> hostnameCNameRecords;
+    private List<string> hostnameTxtRecords;
+    private List<string> hostnameAwverifyCNameRecords;
+    private List<string> trafficManagerCNameRecords;
 
     public string AppServiceURLEnding = "azurewebsites.net";
     public string TrafficManagerURLEnding = "trafficmanager.net";
@@ -81,6 +89,78 @@ public class AppService
         set
         {
             customHostname = value;
+        }
+    }
+
+    public List<IPAddress> IPAddresses
+    {
+        get
+        {
+            return iPAddresses;
+        }
+        set
+        {
+            iPAddresses = value;
+        }
+    }
+
+    public List<string> HostnameARecords
+    {
+        get
+        {
+            return hostnameARecords;
+        }
+        set
+        {
+            hostnameARecords = value;
+        }
+    }
+
+    public List<string> HostnameCNameRecords
+    {
+        get
+        {
+            return hostnameCNameRecords;
+        }
+        set
+        {
+            hostnameCNameRecords = value;
+        }
+    }
+
+    public List<string> HostnameTxtRecords
+    {
+        get
+        {
+            return hostnameTxtRecords;
+        }
+        set
+        {
+            hostnameTxtRecords = value;
+        }
+    }
+
+    public List<string> HostnameAwverifyCNameRecords
+    {
+        get
+        {
+            return hostnameAwverifyCNameRecords;
+        }
+        set
+        {
+            hostnameAwverifyCNameRecords = value;
+        }
+    }
+
+    public List<string> TrafficManagerCNameRecords
+    {
+        get
+        {
+            return trafficManagerCNameRecords;
+        }
+        set
+        {
+            trafficManagerCNameRecords = value;
         }
     }
 }
