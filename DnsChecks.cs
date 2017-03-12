@@ -12,11 +12,13 @@ public class DnsChecks
 {
     public static async Task StartDnsChecks(IDialogContext context, AppService appService)
     {
-        List<IPAddress> appServiceAddresses = GetAppServiceIPAddress(appService);
+        //List<IPAddress> appServiceAddresses = GetAppServiceIPAddress(context, appService);
+        await GetAppServiceIPAddress(context, appService);
+        /*
         foreach (IPAddress appServiceAddress in appServiceAddresses)
         {
             await context.PostAsync($"App Service IP: {appServiceAddress.ToString()}");
-        }
+        } */
 
         List<string> aRecords = GetHostnameARecords(appService);
         foreach (string aRecord in aRecords)
@@ -32,9 +34,12 @@ public class DnsChecks
         
     }
 
-    private static List<IPAddress> GetAppServiceIPAddress(AppService appService)
+    // TODO: Works locally, but not in the Bot Service. Do some tests and see why.
+    private async static Task GetAppServiceIPAddress(IDialogContext context, AppService appService)
     {
         string fullAppServiceURL = "";
+
+        await context.PostAsync($"URL so far: {fullAppServiceURL}");
 
         if (appService.IsASE)
         { 
@@ -45,11 +50,29 @@ public class DnsChecks
             fullAppServiceURL = appService.AppServiceName + "." + appService.AppServiceURLEnding;
         }
 
+        await context.PostAsync($"URL after deciding format: {fullAppServiceURL}");
+
 
         IDnsResolver resolver = new DnsStubResolver();
         List<IPAddress> addresses = DnsResolverExtensions.ResolveHost(resolver, fullAppServiceURL);
 
-        return addresses;
+        IDnsResolver resolver2 = new DnsStubResolver();
+        List<ARecord> aRecords = DnsResolverExtensions.Resolve<ARecord>(resolver2, fullAppServiceURL, RecordType.A, RecordClass.Any);
+
+        foreach (ARecord aRecord in aRecords)
+        {
+            await context.PostAsync($"The A record for the App Service URL is {aRecord.Address.ToString()}");
+        }
+
+        IDnsResolver resolver3 = new DnsStubResolver();
+        List<CNameRecord> cNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver3, fullAppServiceURL, RecordType.CName, RecordClass.Any);
+
+        foreach (CNameRecord cName in cNameRecords)
+        {
+            await context.PostAsync($"The CNAME record for the App Service URL is {cName.CanonicalName.ToString()}");
+        }
+
+        //return addresses;
     }
 
     /// <summary>
