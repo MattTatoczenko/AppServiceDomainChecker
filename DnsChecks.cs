@@ -33,7 +33,13 @@ public class DnsChecks
         IDnsResolver resolver = new DnsStubResolver();
         List<IPAddress> addresses = DnsResolverExtensions.ResolveHost(resolver, fullAppServiceURL);
 
-        appService.IPAddresses = addresses;
+        List<string> addressesString = new List<string>();
+        foreach(IPAddress address in addresses)
+        {
+            addressesString.Add(address.ToString()); 
+        }
+
+        appService.IPAddresses = addressesString;
     }
 
     /// <summary>

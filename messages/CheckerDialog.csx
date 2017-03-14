@@ -587,41 +587,50 @@ public class CheckerDialog : IDialog<object>
     {
         await context.PostAsync("Let's pull some information on the hostname entered.");
 
-        DnsChecks.GetAppServiceIPAddress(appService);
-        foreach (IPAddress appServiceAddress in appService.IPAddresses)
-        {
-            await context.PostAsync($"App Service IP: {appServiceAddress.ToString()}");
-        }
+        DnsChecks.GetAppServiceIPAddress(this.appService);     
 
-        DnsChecks.GetHostnameARecords(appService);
-        foreach (string aRecord in appService.HostnameARecords)
-        {
-            await context.PostAsync($"A Record: {aRecord}");
-        }
+        DnsChecks.GetHostnameARecords(this.appService);
 
-        DnsChecks.GetHostnameAwverifyRecords(appService);
-        foreach (string awverifyRecord in appService.HostnameAwverifyCNameRecords)
-        {
-            await context.PostAsync($"AWVerify CNAME record: {awverifyRecord}");
-        }
+        DnsChecks.GetHostnameAwverifyRecords(this.appService);
 
-        DnsChecks.GetHostnameCNameRecords(appService);
-        foreach (string cName in appService.HostnameCNameRecords)
-        {
-            await context.PostAsync($"CNAME Record: {cName}");
-        }
+        DnsChecks.GetHostnameCNameRecords(this.appService);
 
-        if (appService.UsingTM)
+        if (this.appService.UsingTM)
         {
-            DnsChecks.GetTrafficManagerCNameRecords(appService);
-            foreach (string trafficManagerCName in appService.TrafficManagerCNameRecords)
+            DnsChecks.GetTrafficManagerCNameRecords(this.appService);
+            // Print out all of the Traffic Manager CNAME records if there are any (there should be if they are using Traffic Manager)
+            foreach (string trafficManagerCName in this.appService.TrafficManagerCNameRecords)
             {
                 await context.PostAsync($"Traffic Manager CNAME record: {trafficManagerCName}");
             }
         }
 
-        DnsChecks.GetHostnameTxtRecords(appService);
-        foreach (string txtRecord in appService.HostnameTxtRecords)
+        DnsChecks.GetHostnameTxtRecords(this.appService);
+
+        // TODO: Remove all of the PostAsync calls here. They are used for debug/test purposes
+
+        // Print out all of the IP addresses that correspond to the App Service URL
+        foreach (string appServiceAddress in this.appService.IPAddresses)
+        {
+            await context.PostAsync($"App Service IP: {appServiceAddress}");
+        }
+        // Print out all of the A records configured for the hostname, if there are any
+        foreach (string aRecord in this.appService.HostnameARecords)
+        {
+            await context.PostAsync($"A Record: {aRecord}");
+        }
+        // Print out all of the AWVERIFY CNAME records configured for the hostname, if there are any
+        foreach (string awverifyRecord in this.appService.HostnameAwverifyCNameRecords)
+        {
+            await context.PostAsync($"AWVerify CNAME record: {awverifyRecord}");
+        }
+        // Print out all the CNAME records configured for the hostname, if there are any
+        foreach (string cName in this.appService.HostnameCNameRecords)
+        {
+            await context.PostAsync($"CNAME Record: {cName}");
+        }
+        // Print out all of the TXT records configured for the hostname, if there are any
+        foreach (string txtRecord in this.appService.HostnameTxtRecords)
         {
             await context.PostAsync($"TXT Record: {txtRecord}");
         }
@@ -631,7 +640,53 @@ public class CheckerDialog : IDialog<object>
 
     public async Task PresentDNSInformation(IDialogContext context)
     {
-        await context.PostAsync("Present information to the user based on the DNS checks done.");
+        // Check the A records
+        if(this.appService.HostnameARecords.Count() > 0)
+        {
+            // Loop through all of the A records and check if they match the IP of the App Service
+            foreach (string aRecord in this.appService.HostnameARecords)
+            {
+                if (this.appService.IPAddresses.Contains(aRecord))
+                {
+                    await context.PostAsync($"The DNS A record configured, which points to {aRecord}, matches the IP address of the Azure App Service. This A record is configured correctly.");
+                    // TODO: Check if the AWVERIFY or TXT records match the App Service URL to allow the hostname to be configured. Note: If the domain is already on the App Service, we don't need to have the AWVERIFY or TXT records still around, so say that as well.
+                }
+                else
+                {
+                    // Loop through all of the App Services' IP addresses (should only be 1 inbound IP). Print out how they should configure the record.
+                    foreach (string ipAddress in this.appService.IPAddresses)
+                    {
+                        await context.PostAsync($"The DNS A record configured, which points to {aRecord}, does not match the IP address of the Azure App Service. If you are planning to add this hostname to your App Service, consider updating the DNS A record to point to the IP address of {ipAddress}");
+                    }
+                    // TODO: Check if the AWVERIFY or TXT records match the App Service URL to allow the hostname to be configured. Note: If the domain is already on the App Service, we don't need to have the AWVERIFY or TXT records still around, so say that as well.
+                }
+            }
+        }
+        else if (this.appService.HostnameCNameRecords.Count() > 0)
+        {
+            // Loop through all of the CNAME records and check if they match the URL of the App Service OR the URL of the Traffic Manager
+            foreach (string cNameRecord in this.appService.HostnameCNameRecords)
+            {
+                if (this.appService.UsingTM)
+                {
+                    string fullTrafficManagerURL = this.appService.TmName + "." + this.appService.TrafficManagerURLEnding;
+                    if (cNameRecord.Equals(fullTrafficManagerURL))
+                    {
+                        await context.PostAsync($"The DNS CNAME record configured, which points to {cNameRecord}, matches the Traffic Manager URL that you are using. This CNAME record is configured properly to use Traffic Manager.");
+                        // TODO: Check if the Traffic Manager CNAMEs point towards the App Service URL after this
+                    }
+                    else
+                    {
+                        await context.PostAsync($"The DNS CNAME record configured, which points to {cNameRecord}, does not match the Traffic Manager URL of \"{fullTrafficManagerURL}\". If you plan to use Traffic Manager, consider updating the CNAME record.");
+                        // TODO: Provide an example of how to configure the DNS CNAME here.
+                    }
+                }
+                else
+                {
+                    // TODO: Check that the hostname matches the App Service URL. If it doesn't, see if the AWVERIFY CNAME records matches the App Service URL, as that's used to preemptively add the hostname to the App Service
+                }
+            }
+        }
 
         await context.PostAsync("Type 'restart' to restart the domain checker. Otherwise, we will echo anything you say after this point."); 
         context.Wait(MessageReceivedAsync);

@@ -10,7 +10,7 @@ public class AppService
     private string appServiceName;
     private string customHostname;
 
-    private List<IPAddress> iPAddresses;
+    private List<string> iPAddresses;
     private List<string> hostnameARecords;
     private List<string> hostnameCNameRecords;
     private List<string> hostnameTxtRecords;
@@ -92,7 +92,7 @@ public class AppService
         }
     }
 
-    public List<IPAddress> IPAddresses
+    public List<string> IPAddresses
     {
         get
         {
