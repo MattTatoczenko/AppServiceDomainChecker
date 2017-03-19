@@ -209,7 +209,7 @@ public class CheckerDialog : IDialog<object>
         }
         else
         {
-            await context.PostAsync($"{message} is not a valid App Service name. Please try again.");
+            await context.PostAsync($"{message} is not an acceptable App Service name. Please try again.");
             AskAppServiceName(context);
         }
     }
@@ -454,22 +454,25 @@ public class CheckerDialog : IDialog<object>
     /// <returns>No returns.</returns>
     public async Task ShowAppServiceInformation(IDialogContext context)
     {
-        await context.PostAsync("Here's all of the information on your App Service and custom hostname.");
+        string message = "";
+        message += "Here's all of the information on your App Service and custom hostname.\n\n";
 
         receivedAllCustomerInformation = true;
 
         if (this.appService.UsingTM)
         {
-            await context.PostAsync($"Traffic Manager name: {this.appService.TmName}");
+            message += $"Traffic Manager name: {this.appService.TmName}\n\n";
         }
 
         if (this.appService.IsASE)
         {
-            await context.PostAsync($"App Service Environment name: {this.appService.AseName}");
+            message += $"App Service Environment name: {this.appService.AseName}\n\n";
         }
 
-        await context.PostAsync($"App Service name: {this.appService.AppServiceName}");
-        await context.PostAsync($"Custom hostname: {this.appService.CustomHostname}");
+        message += $"App Service name: {this.appService.AppServiceName}\n\n";
+        message += $"Custom hostname: {this.appService.CustomHostname}";
+
+        await context.PostAsync(message);
         
         AskForConfirmationOfAppServiceInformation(context);
     }
@@ -598,11 +601,11 @@ public class CheckerDialog : IDialog<object>
         if (this.appService.UsingTM)
         {
             DnsChecks.GetTrafficManagerCNameRecords(this.appService);
-            // Print out all of the Traffic Manager CNAME records if there are any (there should be if they are using Traffic Manager)
+            /* Print out all of the Traffic Manager CNAME records if there are any (there should be if they are using Traffic Manager)
             foreach (string trafficManagerCName in this.appService.TrafficManagerCNameRecords)
             {
                 await context.PostAsync($"Traffic Manager CNAME record: {trafficManagerCName}");
-            }
+            } */
         }
 
         DnsChecks.GetHostnameTxtRecords(this.appService);
@@ -638,6 +641,7 @@ public class CheckerDialog : IDialog<object>
         await PresentDNSInformation(context);
     }
 
+    // TODO: Go through and fix the formatting of some of the messages. Some areas send multiple messages to the user. See if they can be combined into one or left how they are.
     public async Task PresentDNSInformation(IDialogContext context)
     {
         // Setting up some initial strings for the App Service. Mostly what the full URLs look like
@@ -652,289 +656,276 @@ public class CheckerDialog : IDialog<object>
         }
         string fullAppServiceURLDNSStyle = fullAppServiceURL + ".";
 
-        // Check the A records
-        if (this.appService.HostnameARecords.Count() > 0)
+        // Check if the App Service exists. If it does, we should be able to find an IP address for it.
+        if (this.appService.IPAddresses.Count() > 0)
         {
-            // User may have selected they are using Traffic Manager. If so, tell them that Traffic Manager only works with CNAME records.
-            if (this.appService.UsingTM)
+            // Check the A records
+            if (this.appService.HostnameARecords.Count() > 0)
             {
-                await context.PostAsync($@"Please note that Traffic Manager does not work with A records. 
-                                            Consider configuring a CNAME record for ""{this.appService.CustomHostname}"" with the value of ""{this.appService.TmName + "." + this.appService.TrafficManagerURLEnding}"" 
-                                            if you wish to use Traffic Manager.");
-            }
-
-            // Loop through all of the A records and check if they match the IP of the App Service
-            bool aRecordMatched = false;
-            string aRecordIPMatch = "";
-            foreach (string aRecord in this.appService.HostnameARecords)
-            {
-                if (this.appService.IPAddresses.Contains(aRecord))
-                {
-                    aRecordMatched = true;
-                    aRecordIPMatch = aRecord;
-                }
-            }
-
-            // Check if one of the A records for the hostname matches the IP address of the App Service
-            if (aRecordMatched)
-            {
-                await context.PostAsync($"One of the DNS A records configured, which points to {aRecordIPMatch}, matches the IP address of the Azure App Service. This A record is configured correctly.");
-
-                string awverifyHostname = "awverify." + this.appService.CustomHostname;
-                // Check if there are proper awverify CNAME or TXT records configured to pass the App Service hostname validation.
-                if (this.appService.HostnameAwverifyCNameRecords.Contains(fullAppServiceURLDNSStyle))
-                {
-                    // We found an awverify CNAME record, so tell the user we found this. They should be able to add the hostname to the App Service.
-                    await context.PostAsync($@"I did find a CNAME record from {awverifyHostname} to {fullAppServiceURL}, 
-                                                which allows you to pass the App Service validation process when using an A record for the main domain.");
-                    await context.PostAsync($@"If you are looking to add the custom hostname of ""{this.appService.CustomHostname}"" to the ""{this.appService.AppServiceName}"" App Service, 
-                                                you have everything set up correctly and can proceed with doing that.");
-                }
-                else if (this.appService.HostnameTxtRecords.Contains(fullAppServiceURL))
-                {
-                    // We found TXT record, so tell the user we found this. They should be able to add the hostname to the App Service.
-                    await context.PostAsync($"I did find a TXT record for the custom domain that maps to the App Service hostname of \"{fullAppServiceURL}\"");
-                    await context.PostAsync($@"If you are looking to add the custom hostname of ""{this.appService.CustomHostname}"" to the ""{this.appService.AppServiceName}"" App Service, 
-                                                you have everything set up correctly and can proceed with doing that.");
-                }
-                else
-                {
-                    // We could not find an awverify CNAME or a proper TXT record that points to the App Service
-                    await context.PostAsync($@"I was unable to find a proper TXT or awverify CNAME record with the value of ""{fullAppServiceURL}"", 
-                                                which will prevent you from adding the custom hostname of ""{this.appService.CustomHostname}"" to your App Service.");
-
-                    // However, if the user has already added the domain to the App Service, those records aren't needed. Those are only to pass the validation needed to add a hostname to an App Service
-                    await context.PostAsync($@"If you have already added the custom hostname of ""{this.appService.CustomHostname}"" to your App Service, 
-                                                then you can ignore these next directions, as they will only help to pass the hostname validation used in App Services.");
-
-                    // Tell the user what they need to configure in regards to the TXT or awverify CNAME record. Also link to the online guide on how to configure the records.
-                    await context.PostAsync($"For a TXT record, configure a TXT record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\"");
-                    await context.PostAsync($"For an awverify CNAME record, configure a CNAME record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\"");
-                    await context.PostAsync("For more information, please visit: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-custom-domain-name#a");
-                }
-
-            }
-            else
-            {
-                // TODO: Double check that all of the below works when going to the Azure portal. If I don't have the A record properly, but I have the TXT or awverify record, will those alone allow it to pass validation?
-
-                // Loop through all of the App Services' IP addresses (should only be 1 inbound IP). Print out how they should configure the record.
-                foreach (string ipAddress in this.appService.IPAddresses)
-                {
-                    await context.PostAsync($@"The DNS A record configured does not match the IP address of the Azure App Service. 
-                                                If you are planning to add this hostname to your App Service and/or want traffic to route towards your App Service, 
-                                                consider updating the DNS A record for ""{this.appService.CustomHostname}"" to point to the IP address of {ipAddress}");
-                }
-
-                string awverifyHostname = "awverify." + this.appService.CustomHostname;
-                // Check if there are proper awverify CNAME or TXT records configured to pass the App Service hostname validation.
-                if (this.appService.HostnameAwverifyCNameRecords.Contains(fullAppServiceURLDNSStyle))
-                {
-                    // We found an awverify CNAME record, so tell the user we found this. Still remind them to configure the A record.
-                    await context.PostAsync($@"I did find a CNAME record from {awverifyHostname} to {fullAppServiceURL}");
-                    await context.PostAsync($@"If you are looking to add the custom hostname of ""{this.appService.CustomHostname}"" to the ""{this.appService.AppServiceName}"" App Service, 
-                                                be sure to configure the A record properly.");
-                }
-                else if (this.appService.HostnameTxtRecords.Contains(fullAppServiceURL))
-                {
-                    // We found TXT record, so tell the user we found this. Still remind them to configure the A record.
-                    await context.PostAsync($"I did find a TXT record for the custom domain that maps to the App Service hostname of \"{fullAppServiceURL}\"");
-                    await context.PostAsync($@"If you are looking to add the custom hostname of ""{this.appService.CustomHostname}"" to the ""{this.appService.AppServiceName}"" App Service, 
-                                                be sure to configure the A record properly.");
-                }
-                else
-                {
-                    // We could not find an awverify CNAME or a proper TXT record that points to the App Service
-                    await context.PostAsync($@"I was unable to find a proper TXT or awverify CNAME record with the value of ""{fullAppServiceURL}"", 
-                                                which will prevent you from adding the custom hostname of ""{this.appService.CustomHostname}"" to your App Service.");
-
-                    // However, if the user has already added the domain to the App Service, those records aren't needed. Those are only to pass the validation needed to add a hostname to an App Service
-                    await context.PostAsync($@"If you have already added the custom hostname of ""{this.appService.CustomHostname}"" to your App Service, 
-                                                then you can ignore these next directions, as they will only help to pass the hostname validation used in App Services.");
-
-                    // Tell the user what they need to configure in regards to the TXT or awverify CNAME record. Also link to the online guide on how to configure the records.
-                    await context.PostAsync($"For a TXT record, configure a TXT record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\"");
-                    await context.PostAsync($"For an awverify CNAME record, configure a CNAME record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\"");
-                }
-
-                // Provide general link on configuring DNS A records for App Services
-                await context.PostAsync("For more information on configuring the DNS records, see this guide: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-custom-domain-name#a");
-            }
-        }
-        else if (this.appService.HostnameCNameRecords.Count() > 0)
-        {
-            // Loop through all of the CNAME records and check if they match the URL of the App Service OR the URL of the Traffic Manager
-            foreach (string cNameRecord in this.appService.HostnameCNameRecords)
-            {
+                // User may have selected they are using Traffic Manager. If so, tell them that Traffic Manager only works with CNAME records.
                 if (this.appService.UsingTM)
                 {
-                    string fullTrafficManagerURL = this.appService.TmName + "." + this.appService.TrafficManagerURLEnding;
-                    string fullTrafficManagerURLDNSStyle = fullTrafficManagerURL + ".";
+                    await context.PostAsync($@"Please note that Traffic Manager does not work with A records. 
+                                            Consider configuring a CNAME record for ""{this.appService.CustomHostname}"" with the value of ""{this.appService.TmName + "." + this.appService.TrafficManagerURLEnding}"" 
+                                            if you wish to use Traffic Manager.");
+                }
 
-                    // Check if the CNAME found for the hostname matches the Traffic Manager URL
-                    if (cNameRecord.Equals(fullTrafficManagerURLDNSStyle))
+                // Loop through all of the A records and check if they match the IP of the App Service
+                bool aRecordMatched = false;
+                string aRecordIPMatch = "";
+                foreach (string aRecord in this.appService.HostnameARecords)
+                {
+                    if (this.appService.IPAddresses.Contains(aRecord))
                     {
-                        await context.PostAsync($"The DNS CNAME record configured, which points to {cNameRecord}, matches the Traffic Manager URL that you are using. This CNAME record is configured properly to use Traffic Manager.");
-                        
-                        // Check if the Traffic Manager has the App Service as an endpoint through CNAME records
-                        if (this.appService.TrafficManagerCNameRecords.Contains(fullAppServiceURLDNSStyle))
+                        aRecordMatched = true;
+                        aRecordIPMatch = aRecord;
+                    }
+                }
+
+                // Check if one of the A records for the hostname matches the IP address of the App Service
+                if (aRecordMatched)
+                {
+                    await context.PostAsync($"One of the DNS A records configured, which points to {aRecordIPMatch}, matches the IP address of the Azure App Service. This A record is configured correctly.");
+
+                    string awverifyHostname = "awverify." + this.appService.CustomHostname;
+                    // Check if there are proper awverify CNAME or TXT records configured to pass the App Service hostname validation.
+                    if (this.appService.HostnameAwverifyCNameRecords.Contains(fullAppServiceURLDNSStyle))
+                    {
+                        // We found an awverify CNAME record, so tell the user we found this. They should be able to add the hostname to the App Service.
+                        await context.PostAsync($@"I did find a CNAME record from {awverifyHostname} to {fullAppServiceURL}, 
+                                                which allows you to pass the App Service validation process when using an A record for the main domain.");
+                        await context.PostAsync($@"If you are looking to add the custom hostname of ""{this.appService.CustomHostname}"" to the ""{this.appService.AppServiceName}"" App Service, 
+                                                you have everything set up correctly and can proceed with doing that.");
+                    }
+                    else if (this.appService.HostnameTxtRecords.Contains(fullAppServiceURL))
+                    {
+                        // We found TXT record, so tell the user we found this. They should be able to add the hostname to the App Service.
+                        await context.PostAsync($"I did find a TXT record for the custom domain that maps to the App Service hostname of \"{fullAppServiceURL}\"");
+                        await context.PostAsync($@"If you are looking to add the custom hostname of ""{this.appService.CustomHostname}"" to the ""{this.appService.AppServiceName}"" App Service, 
+                                                you have everything set up correctly and can proceed with doing that.");
+                    }
+                    else
+                    {
+                        // We could not find an awverify CNAME or a proper TXT record that points to the App Service
+                        string message1 = $"I was unable to find a proper TXT or awverify CNAME record with the value of \"{fullAppServiceURL}\", which will prevent you from adding the custom hostname of \"{this.appService.CustomHostname}\" to your App Service.\n\n";
+
+                        // However, if the user has already added the domain to the App Service, those records aren't needed. Those are only to pass the validation needed to add a hostname to an App Service
+                        string message2 = $"If you have already added the custom hostname of \"{this.appService.CustomHostname}\" to your App Service, then you can ignore these next directions, as they will only help to pass the hostname validation used in App Services.\n\n";
+
+                        // Tell the user what they need to configure in regards to the TXT or awverify CNAME record. Also link to the online guide on how to configure the records.
+                        message2 += $"For a TXT record, configure a TXT record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\"\n\n";
+                        message2 += $"For an awverify CNAME record, configure a CNAME record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\"\n\n";
+                        string message3 = "For more information, please visit: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-custom-domain-name#a";
+                        await context.PostAsync(message1);
+                        await context.PostAsync(message2);
+                        await context.PostAsync(message3);
+                    }
+
+                }
+                else
+                {
+                    // Loop through all of the App Services' IP addresses (should only be 1 inbound IP). Print out how they should configure the record.
+                    foreach (string ipAddress in this.appService.IPAddresses)
+                    {
+                        await context.PostAsync($@"The DNS A record configured does not match the IP address of the Azure App Service. 
+                                                If you want traffic to route towards your App Service, 
+                                                consider updating the DNS A record for ""{this.appService.CustomHostname}"" to point to the IP address of {ipAddress}");
+                    }
+
+                    string awverifyHostname = "awverify." + this.appService.CustomHostname;
+                    // Check if there are proper awverify CNAME or TXT records configured to pass the App Service hostname validation.
+                    if (this.appService.HostnameAwverifyCNameRecords.Contains(fullAppServiceURLDNSStyle))
+                    {
+                        // We found an awverify CNAME record, so tell the user we found this. Still remind them to configure the A record.
+                        await context.PostAsync($@"I did find a CNAME record from {awverifyHostname} to {fullAppServiceURL}");
+                        await context.PostAsync($@"If you are looking to have traffic towards the custom hostname of ""{this.appService.CustomHostname}"" go to the ""{this.appService.AppServiceName}"" App Service, 
+                                                be sure to configure the A record properly.");
+                    }
+                    else if (this.appService.HostnameTxtRecords.Contains(fullAppServiceURL))
+                    {
+                        // We found TXT record, so tell the user we found this. Still remind them to configure the A record.
+                        await context.PostAsync($"I did find a TXT record for the custom domain that maps to the App Service hostname of \"{fullAppServiceURL}\"");
+                        await context.PostAsync($@"If you are looking to have traffic towards the custom hostname of ""{this.appService.CustomHostname}"" go to the ""{this.appService.AppServiceName}"" App Service, 
+                                                be sure to configure the A record properly.");
+                    }
+                    else
+                    {
+                        // We could not find an awverify CNAME or a proper TXT record that points to the App Service
+                        string message1 = $"I was unable to find a proper TXT or awverify CNAME record with the value of \"{fullAppServiceURL}\"";
+                        message1 += $", which will prevent you from adding the custom hostname of \"{this.appService.CustomHostname}\" to your App Service.\n\n";
+
+                        // However, if the user has already added the domain to the App Service, those records aren't needed. Those are only to pass the validation needed to add a hostname to an App Service
+                        string message2 = $"If you have already added the custom hostname of \"{this.appService.CustomHostname}\" to your App Service,";
+                        message2 += " then you can ignore these next directions, as they will only help to pass the hostname validation used in App Services.\n\n";
+
+                        // Tell the user what they need to configure in regards to the TXT or awverify CNAME record. Also link to the online guide on how to configure the records.
+                        message2 += $"For a TXT record, configure a TXT record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\"\n\n";
+                        message2 += $"For an awverify CNAME record, configure a CNAME record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\"";
+                        await context.PostAsync(message1);
+                        await context.PostAsync(message2);
+                    }
+
+                    // Provide general link on configuring DNS A records for App Services
+                    await context.PostAsync("For more information on configuring the DNS records, see this guide: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-custom-domain-name#a");
+                }
+            }
+            else if (this.appService.HostnameCNameRecords.Count() > 0)
+            {
+                // Loop through all of the CNAME records and check if they match the URL of the App Service OR the URL of the Traffic Manager
+                foreach (string cNameRecord in this.appService.HostnameCNameRecords)
+                {
+                    if (this.appService.UsingTM)
+                    {
+                        string fullTrafficManagerURL = this.appService.TmName + "." + this.appService.TrafficManagerURLEnding;
+                        string fullTrafficManagerURLDNSStyle = fullTrafficManagerURL + ".";
+
+                        // Check if the CNAME found for the hostname matches the Traffic Manager URL
+                        if (cNameRecord.Equals(fullTrafficManagerURLDNSStyle))
                         {
-                            // The App Service is an endpoint of the Traffic Manager. They should be able to add the hostname to the App Service now.
-                            await context.PostAsync($@"The ""{this.appService.TmName}"" Traffic Manager has the ""{this.appService.AppServiceName}"" App Service as an endpoint. 
+                            await context.PostAsync($"The DNS CNAME record configured, which points to {cNameRecord}, matches the Traffic Manager URL that you are using. This CNAME record is configured properly to use Traffic Manager.");
+
+                            // Check if the Traffic Manager has the App Service as an endpoint through CNAME records
+                            if (this.appService.TrafficManagerCNameRecords.Contains(fullAppServiceURLDNSStyle))
+                            {
+                                // The App Service is an endpoint of the Traffic Manager. They should be able to add the hostname to the App Service now.
+                                await context.PostAsync($@"The ""{this.appService.TmName}"" Traffic Manager has the ""{this.appService.AppServiceName}"" App Service as an endpoint. 
                                                         If the App Service has the hostname of ""{fullTrafficManagerURL}"" added to it, 
                                                         then you will be able to add the custom hostname of ""{this.appService.CustomHostname}"" to the App Service.");
+                            }
+                            else
+                            {
+                                // The App Service is not the primary endpoint of the Traffic Manager. However, it could be one of the secondary endpoints.
+                                await context.PostAsync($@"The ""{this.appService.TmName}"" Traffic Manager does not have the ""{this.appService.AppServiceName}"" App Service as the primary endpoint. 
+                                                        If you have not added the App Service as an endpoint of the Traffic manager, you should still be able to add the hostname to the App Service. 
+                                                        If the App Service is not an endpoint of the Traffic Manager yet, consider adding the App Service as an Azure endpoint in the Traffic Manager.");
+                            }
                         }
                         else
                         {
-                            // The App Service is not an endpoint of the Traffic Manager. They should add the App Service as an Azure endpoint on the Traffic Manager.
-                            await context.PostAsync($@"The ""{this.appService.TmName}"" Traffic Manager does not have the ""{this.appService.AppServiceName}"" App Service as an endpoint. 
-                                                        If you wish to add the custom domain to the App Service, consider adding the App Service as an Azure endpoint of the Traffic Manager.");
+                            // The CNAME does not match the Traffic Manager URL, so that's not configured right.
+                            await context.PostAsync($"The DNS CNAME record configured, which points to {cNameRecord}, does not match the Traffic Manager URL of \"{fullTrafficManagerURL}\". If you plan to use Traffic Manager, consider updating the CNAME record.");
+                            // Tell the user how to configure the CNAME record and link to our online document on that
+                            await context.PostAsync($"For the CNAME record, configure it so that the hostname of \"{this.appService.CustomHostname}\" has the value of \"{fullTrafficManagerURL}\"");
+                            await context.PostAsync("For more information on configuring your hostname with Traffic Manager, visit this guide: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-traffic-manager-custom-domain-name#add-a-dns-record-for-your-custom-domain");
+
+                            // User may have the CNAME configured directly for the App Service, so check for that. If the CNAME does map towards the App Service, provide some information on it. If not, don't provide any information.
+                            if (cNameRecord.Equals(fullAppServiceURLDNSStyle))
+                            {
+                                if (this.appService.IsASE)
+                                {
+                                    await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the App Service URL.
+                                                            If you wish to continue to use Traffic Manager with this hostname, consider updating the CNAME record as mentioned above. 
+                                                            If you do not wish to use Traffic Manager, you are currently able to add the hostname of ""{this.appService.CustomHostname}"" 
+                                                            to the ""{this.appService.AppServiceName}"" App Service in the ""{this.appService.AseName}"" App Service Environment.");
+                                }
+                                else
+                                {
+                                    await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the App Service URL.
+                                                            If you wish to continue to use Traffic Manager with this hostname, consider updating the CNAME record as mentioned above. 
+                                                            If you do not wish to use Traffic Manager, you are currently able to add the hostname of ""{this.appService.CustomHostname}"" 
+                                                            to the ""{this.appService.AppServiceName}"" App Service.");
+                                }
+                            }
                         }
                     }
                     else
                     {
-                        // The CNAME does not match the Traffic Manager URL, so that's not configured right.
-                        await context.PostAsync($"The DNS CNAME record configured, which points to {cNameRecord}, does not match the Traffic Manager URL of \"{fullTrafficManagerURL}\". If you plan to use Traffic Manager, consider updating the CNAME record.");
-                        // Tell the user how to configure the CNAME record and link to our online document on that
-                        await context.PostAsync($"For the CNAME record, configure it so that the hostname of \"{this.appService.CustomHostname}\" has the value of \"{fullTrafficManagerURL}\"");
-                        await context.PostAsync("For more information on configuring your hostname with Traffic Manager, visit this guide: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-traffic-manager-custom-domain-name#add-a-dns-record-for-your-custom-domain");
-
-                        // User may have the CNAME configured directly for the App Service, so check for that. If the CNAME does map towards the App Service, provide some information on it. If not, don't provide any information.
+                        // Check that the hostname matches the App Service URL. If it doesn't, see if the AWVERIFY CNAME records matches the App Service URL, as that's used to preemptively add the hostname to the App Service
                         if (cNameRecord.Equals(fullAppServiceURLDNSStyle))
                         {
                             if (this.appService.IsASE)
                             {
-                                await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the App Service URL.
-                                                            If you wish to continue to use Traffic Manager with this hostname, consider updating the CNAME record as mentioned above. 
-                                                            If you do not wish to use Traffic Manager, you are currently able to add the hostname of ""{this.appService.CustomHostname}"" 
-                                                            to the ""{this.appService.AppServiceName}"" App Service in the ""{this.appService.AseName}"" App Service Environment.");
+                                await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the App Service URL. 
+                                                        This CNAME record is configured properly for the ""{this.appService.AppServiceName}"" App Service in the ""{this.appService.AseName}"" App Service Environment.");
                             }
                             else
                             {
-                                await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the App Service URL.
-                                                            If you wish to continue to use Traffic Manager with this hostname, consider updating the CNAME record as mentioned above. 
-                                                            If you do not wish to use Traffic Manager, you are currently able to add the hostname of ""{this.appService.CustomHostname}"" 
-                                                            to the ""{this.appService.AppServiceName}"" App Service.");
+                                await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the App Service URL. 
+                                                        This CNAME record is configured properly for the ""{this.appService.AppServiceName}"" App Service.");
                             }
                         }
-                    }
-                }
-                else
-                {
-                    // Check that the hostname matches the App Service URL. If it doesn't, see if the AWVERIFY CNAME records matches the App Service URL, as that's used to preemptively add the hostname to the App Service
-                    if (cNameRecord.Equals(fullAppServiceURLDNSStyle))
-                    {
-                        if (this.appService.IsASE)
-                        {
-                            await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the App Service URL. 
-                                                        This CNAME record is configured properly for the ""{this.appService.AppServiceName}"" App Service in the ""{this.appService.AseName}"" App Service Environment.");
-                        }
                         else
                         {
-                            await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the App Service URL. 
-                                                        This CNAME record is configured properly for the ""{this.appService.AppServiceName}"" App Service.");
-                        }
-                    }
-                    else
-                    {
-                        await context.PostAsync($"The DNS CNAME record configured, which points to {cNameRecord}, does not match the App Service URL of \"{fullAppServiceURL}\".");
-                        // String used in the whole if-else block, so place it one level above to use in both
-                        string awverifyHostname = "awverify." + this.appService.CustomHostname;
+                            await context.PostAsync($"The DNS CNAME record configured, which points to {cNameRecord}, does not match the App Service URL of \"{fullAppServiceURL}\".");
+                            // String used in the whole if-else block, so place it one level above to use in both
+                            string awverifyHostname = "awverify." + this.appService.CustomHostname;
 
-                        // Check if an awverify CNAME record is configured, which would allow a hostname to pass validation on an App Service
-                        if (this.appService.HostnameAwverifyCNameRecords.Contains(fullAppServiceURLDNSStyle))
-                        {
-                            // We did find an awverify record, so they can at least add the desired hostname to the App Service, even if traffic to that hostname doesn't go to the App Service.
-                            await context.PostAsync($@"However, we did find a CNAME record from {awverifyHostname} to {fullAppServiceURL}, 
+                            // Check if an awverify CNAME record is configured, which would allow a hostname to pass validation on an App Service
+                            if (this.appService.HostnameAwverifyCNameRecords.Contains(fullAppServiceURLDNSStyle))
+                            {
+                                // We did find an awverify record, so they can at least add the desired hostname to the App Service, even if traffic to that hostname doesn't go to the App Service.
+                                await context.PostAsync($@"However, we did find a CNAME record from {awverifyHostname} to {fullAppServiceURL}, 
                                                     which allows you to pass the App Service validation process without adjusting the actual hostname. 
                                                     You will need to eventually switch the hostname of ""{this.appService.CustomHostname}"" to point towards the App Service URL of ""{fullAppServiceURL}""");
-                        }
-                        else
-                        {
-                            // We didn't find an awverify record either. Tell them how to configure either the regular CNAME or an awverify CNAME
-                            await context.PostAsync("You have two options to pass the hostname validation for App Services.");
-                            await context.PostAsync($"Option 1: Configure a CNAME record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\".");
-                            await context.PostAsync($@"Option 2: For an awverify CNAME record, configure a CNAME record for ""{awverifyHostname}"" with the value of ""{fullAppServiceURL}"". 
+                            }
+                            else
+                            {
+                                // We didn't find an awverify record either. Tell them how to configure either the regular CNAME or an awverify CNAME
+                                await context.PostAsync("You have two options to pass the hostname validation for App Services.");
+                                await context.PostAsync($"Option 1: Configure a CNAME record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\".");
+                                await context.PostAsync($@"Option 2: For an awverify CNAME record, configure a CNAME record for ""{awverifyHostname}"" with the value of ""{fullAppServiceURL}"". 
                                                         You will need to eventually switch the hostname of ""{this.appService.CustomHostname}"" to point towards the App Service URL of ""{fullAppServiceURL}"".");
-                        }
+                            }
 
-                        // Provide the online document that lists out how to configure the CNAME records
-                        await context.PostAsync("For more information on configuring CNAME records, see this guide: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-custom-domain-name#cname");
+                            // Provide the online document that lists out how to configure the CNAME records
+                            await context.PostAsync("For more information on configuring CNAME records, see this guide: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-custom-domain-name#cname");
+                        }
                     }
                 }
+            }
+            else
+            {
+                await context.PostAsync($"I was not able to find any CNAME or A records for the hostname of {this.appService.CustomHostname}. See the below steps to configure those.");
+
+                // Provide steps on configuring the A+TXT records
+                foreach (string ipAddress in this.appService.IPAddresses)
+                {
+                    await context.PostAsync($"For an A record, configure an A record for \"{this.appService.CustomHostname}\" with the value of \"{ipAddress}\"");
+                }
+                await context.PostAsync($"If you configure an A record, you will also need a TXT record. For that TXT record, configure the TXT record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\"");
+
+                // Provide steps on configuring the CNAME records
+                await context.PostAsync($"For a CNAME record, configure a CNAME record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\".");
+
+                // Provide the online document on configuring hostnames
+                await context.PostAsync("For more information on configuring hostnames for use on Azure App Services, see this guide: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-custom-domain-name");
             }
         }
         else
         {
-            await context.PostAsync($"I was not able to find any CNAME or A records for the hostname of {this.appService.CustomHostname}. See the below steps to configure those.");
-
-            // Provide steps on configuring the A+TXT records
-            foreach (string ipAddress in this.appService.IPAddresses)
+            // We couldn't find the IP address of the App Service, so we cannot confirm that it exists
+            if (this.appService.IsASE)
             {
-                await context.PostAsync($"For an A record, configure an A record for \"{this.appService.CustomHostname}\" with the value of \"{ipAddress}\"");
+                await context.PostAsync($@"I was not able to find the IP address for the ""{this.appService.AppServiceName}"" App Service in the ""{this.appService.AseName}"" App Service Environment. 
+                                            Please check that the App Service Environment and/or the App Service exist.");
             }
-            await context.PostAsync($"If you configure an A record, you will also need a TXT record. For that TXT record, configure the TXT record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\"");
+            else
+            {
+                await context.PostAsync($@"I was not able to find the IP address for the ""{this.appService.AppServiceName}"" App Service. 
+                                            Please check that this App Service exists.");
+            }
 
-            // Provide steps on configuring the CNAME records
-            await context.PostAsync($"For a CNAME record, configure a CNAME record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\".");
-
-            // Provide the online document on configuring hostnames
-            await context.PostAsync("For more information on configuring hostnames for use on Azure App Services, see this guide: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-custom-domain-name");
         }
 
-        // TODO: We don't want to wait. Tell the user that we are done checking the domain. If they want to check another domain, type in anything and we'll restart the whole process.
-        await context.PostAsync("Type 'restart' to restart the domain checker. Otherwise, we will echo anything you say after this point."); 
-        context.Wait(MessageReceivedAsync);
+        // Tell the user that we are done checking the domain. If they want to check another domain, type in anything and we'll restart the whole process.
+        string message = $"I am done checking the custom domain of \"{this.appService.CustomHostname}\".\n\n";
+        message += "If you wish to check another custom domain, type in anything and we will restart the domain checker.";
+        await context.PostAsync(message); 
+        context.Wait(RestartMessageReceivedAsync);
     }
 
     /// <summary>
-    /// Default ending point right now. Once the user is here, we will repeat what they enter.
-    /// If the user enters "restart" exactly, we will ask them if they really want to restart and start the process all over again.
+    /// Ending point for the domain checker.
+    /// If the user types anything into the chat window, we will restart.
     /// </summary>
     /// <param name="context">Context needed for the convesation to occur. Used to either repeat what the user enters or provide a confirmation prompt.</param>
     /// <param name="argument">Any message the user enters into the chat window.</param>
     /// <returns>NO returns.</returns>
-    public virtual async Task MessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> argument)
+    public virtual async Task RestartMessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> argument)
     {
         var message = await argument;
-        if (message.Text == "restart")
-        {
-            PromptDialog.Confirm(
-                context,
-                AfterRestartAsync,
-                "Are you sure you want to go back to the beginning?",
-                "I'm sorry, I didn't understand that.",
-                promptStyle: PromptStyle.Auto);
-        }
-        else
-        {
-            await context.PostAsync($"You said {message.Text}");
-            context.Wait(MessageReceivedAsync);
-        }
-    }
-
-    /// <summary>
-    /// Confirm whether the user wants to restart the whole process or not. 
-    /// If so, restart and ask them for information to enter.
-    /// If not, keep just repeating what they enter.
-    /// NOTE: This will be changed later on.
-    /// </summary>
-    /// <param name="context">Context needed for the convesation to occur. Used to provide text updates based on the user's choice.</param>
-    /// <param name="argument">A boolean value. If True, the user wants to restart the whole process. If False, keep doing what you're doing.</param>
-    /// <returns></returns>
-    public async Task AfterRestartAsync(IDialogContext context, IAwaitable<bool> argument)
-    {
-        var confirm = await argument;
-        if (confirm)
-        {
-            await context.PostAsync("Let's restart.");
-            receivedAllCustomerInformation = false;
-            await CheckUseOfAppServiceEnvironment(context, null);
-        }
-        else
-        {
-            await context.PostAsync("I will continue checking the domain.");
-            context.Wait(MessageReceivedAsync);
-        }
+        await context.PostAsync("Let's check another domain!");
+        receivedAllCustomerInformation = false;
+        await CheckUseOfAppServiceEnvironment(context, null);
     }
 }

@@ -103,6 +103,12 @@ public class DnsChecks
         appService.HostnameCNameRecords = cNames;
     }
 
+    /// <summary>
+    /// Do DNS queries to get any CNAME records associated with the Traffic Manager URL the user has entered.
+    /// This will get the currently available endpoint that's responding to the Traffic Manager.
+    /// Puts the string output of all of the Traffic Manager CNAME records into the AppService argument so the list can be used later.
+    /// </summary>
+    /// <param name="appService">The object that holds all the information the user has given, including the Traffic Manager name.</param>
     public static void GetTrafficManagerCNameRecords(AppService appService)
     {
         IDnsResolver resolver = new DnsStubResolver();
