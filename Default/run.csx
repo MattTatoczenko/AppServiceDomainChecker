@@ -1,5 +1,5 @@
 #r "Newtonsoft.Json"
-#load "CheckerDialog.csx"
+#load "..\Dialog\CheckerDialog.csx"
 
 using System;
 using System.Net;

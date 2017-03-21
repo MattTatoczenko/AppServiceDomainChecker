@@ -7,7 +7,7 @@ Project("{911E67C6-3D85-4FCE-B560-20A9C3E3FF48}") = "func", "..\..\..\..\..\AppD
 		PortSupplier = 00000000-0000-0000-0000-000000000000
 		Executable = Func.exe
 		RemoteMachine = THERMONSTER
-		StartingDirectory = 
+		StartingDirectory = C:\Users\matato\OneDrive Matt\OneDrive - Microsoft\App Service Domain Checker\Code\AppServiceDomainChecker
 		Arguments = 
 		Environment = Default
 		LaunchingEngine = fb0d4648-f776-4980-95f8-bb7f36ebc1ee
@@ -23,28 +23,28 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		readme.md = readme.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "messages", "messages", "{F4D9DF3B-F4E4-4E19-9053-3AF71A3189FA}"
-	ProjectSection(SolutionItems) = preProject
-		messages\function.json = messages\function.json
-		messages\project.json = messages\project.json
-		messages\project.lock.json = messages\project.lock.json
-		messages\run.csx = messages\run.csx
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "objects", "objects", "{4F9DF23A-E3B9-4CFE-92FD-77F87CA1713A}"
-	ProjectSection(SolutionItems) = preProject
-		AppService.cs = AppService.cs
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dialog", "Dialog", "{7036A18D-2B80-4085-95C9-42B12BD4F73E}"
 	ProjectSection(SolutionItems) = preProject
-		messages\CheckerDialog.csx = messages\CheckerDialog.csx
+		Dialog\CheckerDialog.csx = Dialog\CheckerDialog.csx
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Helper", "Helper", "{B9312CBA-021B-4C6B-B4F2-5C215A315189}"
 	ProjectSection(SolutionItems) = preProject
-		DnsChecks.cs = DnsChecks.cs
-		InputCheckers.cs = InputCheckers.cs
+		Helper\DnsChecks.cs = Helper\DnsChecks.cs
+		Helper\InputCheckers.cs = Helper\InputCheckers.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Default", "Default", "{464C746F-2D5C-4D71-9DDA-D0400D703D5D}"
+	ProjectSection(SolutionItems) = preProject
+		Default\function.json = Default\function.json
+		Default\project.json = Default\project.json
+		Default\project.lock.json = Default\project.lock.json
+		Default\run.csx = Default\run.csx
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Objects", "Objects", "{1E92D742-1E11-47DE-942D-536DFE4CA34C}"
+	ProjectSection(SolutionItems) = preProject
+		Objects\AppService.cs = Objects\AppService.cs
 	EndProjectSection
 EndProject
 Global
@@ -64,9 +64,9 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{F4D9DF3B-F4E4-4E19-9053-3AF71A3189FA} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
-		{4F9DF23A-E3B9-4CFE-92FD-77F87CA1713A} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
 		{7036A18D-2B80-4085-95C9-42B12BD4F73E} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
 		{B9312CBA-021B-4C6B-B4F2-5C215A315189} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
+		{464C746F-2D5C-4D71-9DDA-D0400D703D5D} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
+		{1E92D742-1E11-47DE-942D-536DFE4CA34C} = {36665A78-4D93-48C7-B432-4DA46AA140D5}
 	EndGlobalSection
 EndGlobal

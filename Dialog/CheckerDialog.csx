@@ -1,6 +1,6 @@
-#load "..\AppService.cs"
-#load "..\InputCheckers.cs"
-#load "..\DnsChecks.cs"
+#load "..\Objects\AppService.cs"
+#load "..\Helper\InputCheckers.cs"
+#load "..\Helper\DnsChecks.cs"
 
 using System;
 using System.Collections;
