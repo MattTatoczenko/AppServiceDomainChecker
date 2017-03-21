@@ -31,6 +31,7 @@ public class DnsChecks
         }
 
         IDnsResolver resolver = new DnsStubResolver();
+        // TODO: See what exceptions this may throw if DNS lookup fails
         List<IPAddress> addresses = DnsResolverExtensions.ResolveHost(resolver, fullAppServiceURL);
 
         List<string> addressesString = new List<string>();
@@ -50,6 +51,7 @@ public class DnsChecks
     public static void GetHostnameARecords(AppService appService)
     {
         IDnsResolver resolver = new DnsStubResolver();
+        // TODO: See what exceptions this may throw if DNS lookup fails
         List<ARecord> aRecords = DnsResolverExtensions.Resolve<ARecord>(resolver, appService.CustomHostname, RecordType.A, RecordClass.Any);
 
         List<string> aRecordsStrings = new List<string>();
@@ -73,6 +75,7 @@ public class DnsChecks
         IDnsResolver resolver = new DnsStubResolver();
 
         string awverifyRecordURL = "awverify." + appService.CustomHostname;
+        // TODO: See what exceptions this may throw if DNS lookup fails
         List<CNameRecord> awverifyCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, awverifyRecordURL, RecordType.CName, RecordClass.Any);
 
         List<string> awverifyRecords = new List<string>();
@@ -92,6 +95,7 @@ public class DnsChecks
     public static void GetHostnameCNameRecords(AppService appService)
     {
         IDnsResolver resolver = new DnsStubResolver();
+        // TODO: See what exceptions this may throw if DNS lookup fails
         List<CNameRecord> cNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.CustomHostname, RecordType.CName, RecordClass.Any);
 
         List<string> cNames = new List<string>();
@@ -112,6 +116,7 @@ public class DnsChecks
     public static void GetTrafficManagerCNameRecords(AppService appService)
     {
         IDnsResolver resolver = new DnsStubResolver();
+        // TODO: See what exceptions this may throw if DNS lookup fails
         List<CNameRecord> trafficManagerCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.TmName + "." + appService.TrafficManagerURLEnding, RecordType.CName, RecordClass.Any);
 
         List<string> trafficManagerCNames = new List<string>();
@@ -131,6 +136,7 @@ public class DnsChecks
     public static void GetHostnameTxtRecords(AppService appService)
     {
         IDnsResolver resolver = new DnsStubResolver();
+        // TODO: See what exceptions this may throw if DNS lookup fails
         List<TxtRecord> txtRecords = DnsResolverExtensions.Resolve<TxtRecord>(resolver, appService.CustomHostname, RecordType.Txt, RecordClass.Any);
 
         List<string> txts = new List<string>();

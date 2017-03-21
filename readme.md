@@ -1,6 +1,6 @@
 # Azure App Service Domain Checker
 This GitHub repository holds the source code for the Azure Bot Service called Azure App Service Domain Checker. Read further on to find out what this Bot Service does.
-For more information on Azure Bot Service, see this link: https://docs.botframework.com/en-us/azure-bot-service/.
+For more information on Azure Bot Service, see this link: [Azure Bot Service](https://docs.botframework.com/en-us/azure-bot-service/).
 
 ## What does this bot do?
 This bot is meant to target specific information in regards to an Azure App Service. Click the following link to learn more about [Azure App Service](https://docs.microsoft.com/en-us/azure/app-service/app-service-value-prop-what-is).

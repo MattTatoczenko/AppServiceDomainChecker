@@ -22,8 +22,7 @@ public class CheckerDialog : IDialog<object>
     {
         try
         {
-            receivedAllCustomerInformation = false;
-            context.Wait(CheckUseOfAppServiceEnvironment);
+            context.Wait(InitialInformationOnAppServicechecker);
         }
         catch (OperationCanceledException error)
         {
@@ -38,6 +37,26 @@ public class CheckerDialog : IDialog<object>
     }
 
     /// <summary>
+    /// Initial entry point for the bot. Used to tell the user information on what we are doing with this bot service.
+    /// Mostly used in case the 'run.csx' portion about a ConversationUpdate doesn't run. I've seen weird issues in Skype
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to present a message to the user about what we are trying to do with this bot.</param>
+    /// <param name="argument">Not used here. Used to just take in whatever the user types and present the information to the user.</param>
+    /// <returns>No returns.</returns>
+    public async Task InitialInformationOnAppServicechecker(IDialogContext context, IAwaitable<IMessageActivity> argument)
+    {
+        receivedAllCustomerInformation = false;
+        string message = "I am here to help with checking your custom hostname/domain and seeing if it is configured properly for use on your Azure App Service.\n\n";
+        message += "I will ask you information about your App Service, including whether you use Traffic Manager with your App Service and whether the App Service is in an App Service Environment or not.\n\n";
+        message += "After getting all of the information on your App Service, I will do some DNS checks to pull information on the App Service and the hostname.\n\n";
+        message += "Finally, I will present all of this information to you. After that, you can check another App Service and another domain if you want.";
+
+        await context.PostAsync(message);
+
+        await CheckUseOfAppServiceEnvironment(context);
+    }
+
+    /// <summary>
     /// Starting point for the App Service Domain Checker dialog. This starts major section 1 of 4, asking the user about an App Service Environment they may or may not be using.
     /// Presents a dialog box confirming whether the user is using an App Service Environment or not.
     /// Users will choose "Yes" or "No".
@@ -45,7 +64,7 @@ public class CheckerDialog : IDialog<object>
     /// <param name="context">Context needed for the convesation to occur. Used to have a confirmation dialog about the use of an App Service Environment.</param>
     /// <param name="argument">Supposed to be the argument a user puts into the chat window. Not used by this method.</param>
     /// <returns>No returns.</returns>
-    public async Task CheckUseOfAppServiceEnvironment(IDialogContext context, IAwaitable<IMessageActivity> argument)
+    public async Task CheckUseOfAppServiceEnvironment(IDialogContext context)
     {
         await context.PostAsync("Let's check for the type of App Service you are using.");
 
@@ -641,7 +660,6 @@ public class CheckerDialog : IDialog<object>
         await PresentDNSInformation(context);
     }
 
-    // TODO: Go through and fix the formatting of some of the messages. Some areas send multiple messages to the user. See if they can be combined into one or left how they are.
     public async Task PresentDNSInformation(IDialogContext context)
     {
         // Setting up some initial strings for the App Service. Mostly what the full URLs look like
@@ -926,6 +944,6 @@ public class CheckerDialog : IDialog<object>
         var message = await argument;
         await context.PostAsync("Let's check another domain!");
         receivedAllCustomerInformation = false;
-        await CheckUseOfAppServiceEnvironment(context, null);
+        context.Wait(InitialInformationOnAppServicechecker);
     }
 }

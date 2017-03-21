@@ -46,8 +46,8 @@ public static async Task<object> Run(HttpRequestMessage req, TraceWriter log)
                         foreach (var newMember in newMembers)
                         {
                             // TODO: Set up soemthing on the GitHub page that includes the Privacy and Terms of Service information/links
-                            reply.Text = "Hello! I am the Azure App Service Domain Checker. I am here to help with checking your custom hostname/domain and seeing if it is configured properly for use on your Azure App Service.\n\n";
-                            reply.Text += $"First, by using this bot, you agree to my Privacy Statement and Terms of Service here: (include here).\n\n";
+                            reply.Text = "Hello! I am the Azure App Service Domain Checker.\n\n";
+                            reply.Text += $"First, by using this bot, you agree to my Privacy Statement and Terms of Service here: https://matttatoczenko.github.io/AppServiceDomainChecker/ \n\n";
                             reply.Text += "Type anything to start our interaction.";
                             await client.Conversations.ReplyToActivityAsync(reply);
                         }
