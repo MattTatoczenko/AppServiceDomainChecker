@@ -45,7 +45,6 @@ public static async Task<object> Run(HttpRequestMessage req, TraceWriter log)
                         var newMembers = update.MembersAdded?.Where(t => t.Id != activity.Recipient.Id);
                         foreach (var newMember in newMembers)
                         {
-                            // TODO: Set up soemthing on the GitHub page that includes the Privacy and Terms of Service information/links
                             reply.Text = "Hello! I am the Azure App Service Domain Checker.\n\n";
                             reply.Text += $"First, by using this bot, you agree to my Privacy Statement and Terms of Service here: https://matttatoczenko.github.io/AppServiceDomainChecker/ \n\n";
                             reply.Text += "Type anything to start our interaction.";

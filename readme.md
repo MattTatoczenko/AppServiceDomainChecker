@@ -2,6 +2,9 @@
 This GitHub repository holds the source code for the Azure Bot Service called Azure App Service Domain Checker. Read further on to find out what this Bot Service does.
 For more information on Azure Bot Service, see this link: [Azure Bot Service](https://docs.botframework.com/en-us/azure-bot-service/).
 
+## Privacy Policy
+Our Azure App Service Domain Checker is enabled by Microsoft Bot Framework. The Microsoft Bot Framework is a set of web-services that enable intelligent services and connections using conversation channels you authorize. As a service provider, Microsoft will transmit content you provide to our bot/service in order to enable the service. For more information about Microsoft privacy policies please see their privacy statement here: http://go.microsoft.com/fwlink/?LinkId=521839. In addition, your interactions with this bot/service are also subject to the conversational channel's applicable terms of use, privacy and data collection policies. To report abuse when using a bot that uses the Microsoft Bot Framework to Microsoft, please visit the Microsoft Bot Framework website at https://www.botframework.com and use the “Report Abuse” link in the menu to contact Microsoft.
+
 ## What does this bot do?
 This bot is meant to target specific information in regards to an Azure App Service. Click the following link to learn more about [Azure App Service](https://docs.microsoft.com/en-us/azure/app-service/app-service-value-prop-what-is).
 
@@ -25,6 +28,7 @@ For more information on the library, visit the [ARSoft.Tools.Net](http://arsoftt
 The bot makes some assumptions on the various inputs it receives. 
 
 ### App Service Environment name
+* The App Service Environment must be a public App Service Environment. This Bot does not check ILB App Service Environments.
 * The name has to be at least 2 characters in length but it cannot be longer than 39 characters. 
 * The name can have letters, numbers, and dashes, but it cannot start or end with a dash.
 
@@ -49,3 +53,6 @@ The requirements for the hostname come directly from [RFC1123](https://tools.iet
 * Each label can have letters, numbers, and dashes, but they cannot start or end with a dash.
 * Each label is separated by a period ('.') character.
 * The total hostname cannot be longer than 253 characters.
+
+## Have questions or issues?
+For any issues you find, please file an issue on the [GitHub Issues](https://github.com/MattTatoczenko/AppServiceDomainChecker/issues) page.
