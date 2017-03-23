@@ -59,3 +59,4 @@ The requirements for the hostname come directly from [RFC1123](https://tools.iet
 
 ## Have questions or issues?
 For any issues you find, please file an issue on the [GitHub Issues](https://github.com/MattTatoczenko/AppServiceDomainChecker/issues) page.
+For any questions on the bot, please email [AppServDomainChecker@microsoft.com](mailto:AppServDomainChecker@microsoft).
