@@ -1,5 +1,4 @@
 ﻿using System;
-using static AppService;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Microsoft.Bot.Builder.Dialogs;
@@ -7,6 +6,9 @@ using System.Net;
 // See http://arsofttoolsnet.codeplex.com/ for information on the ARSoft.Tools.Net library
 using ARSoft.Tools.Net;
 using ARSoft.Tools.Net.Dns;
+
+using static AppService;
+using static DNSCheckErrors;
 
 public class DnsChecks
 {
@@ -17,7 +19,7 @@ public class DnsChecks
     /// Puts the IP address list into the AppService object sent in as an argument so it can be used later.
     /// </summary>
     /// <param name="appService">Object containing all of the information on the App Service we are checking. Includes the ASE name and App Service name, which are directly used here.</param>
-    public static void GetAppServiceIPAddress(AppService appService)
+    public static void GetAppServiceIPAddress(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
         string fullAppServiceURL = "";
 
@@ -31,16 +33,25 @@ public class DnsChecks
         }
 
         IDnsResolver resolver = new DnsStubResolver();
-        // TODO: See what exceptions this may throw if DNS lookup fails
-        List<IPAddress> addresses = DnsResolverExtensions.ResolveHost(resolver, fullAppServiceURL);
-
-        List<string> addressesString = new List<string>();
-        foreach(IPAddress address in addresses)
+       
+        // TODO: Verify that this works and doesn't break current logic
+        try
         {
-            addressesString.Add(address.ToString()); 
-        }
+            List<IPAddress> addresses = DnsResolverExtensions.ResolveHost(resolver, fullAppServiceURL);
 
-        appService.IPAddresses = addressesString;
+            List<string> addressesString = new List<string>();
+            foreach (IPAddress address in addresses)
+            {
+                addressesString.Add(address.ToString());
+            }
+
+            appService.IPAddresses = addressesString;
+        }
+        catch
+        {
+            dnsCheckErrors.appServiceIPLookupFailed = true;
+            dnsCheckErrors.currentDNSFailures++;
+        }        
     }
 
     /// <summary>
@@ -48,19 +59,27 @@ public class DnsChecks
     /// Puts the string output of the A record listing into the AppService argument so the list can be used later.
     /// </summary>
     /// <param name="appService">The object that holds all of the information the user has given, including the custom hostname.</param>
-    public static void GetHostnameARecords(AppService appService)
+    public static void GetHostnameARecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
         IDnsResolver resolver = new DnsStubResolver();
-        // TODO: See what exceptions this may throw if DNS lookup fails
-        List<ARecord> aRecords = DnsResolverExtensions.Resolve<ARecord>(resolver, appService.CustomHostname, RecordType.A, RecordClass.Any);
-
-        List<string> aRecordsStrings = new List<string>();
-        foreach(ARecord aRecord in aRecords)
+        // TODO: Verify that this works and doesn't break current logic
+        try
         {
-            aRecordsStrings.Add(aRecord.Address.ToString());
-        }
+            List<ARecord> aRecords = DnsResolverExtensions.Resolve<ARecord>(resolver, appService.CustomHostname, RecordType.A, RecordClass.Any);
 
-        appService.HostnameARecords = aRecordsStrings;
+            List<string> aRecordsStrings = new List<string>();
+            foreach (ARecord aRecord in aRecords)
+            {
+                aRecordsStrings.Add(aRecord.Address.ToString());
+            }
+
+            appService.HostnameARecords = aRecordsStrings;
+        }
+        catch
+        {
+            dnsCheckErrors.hostnameARecordLookupFailed = true;
+            dnsCheckErrors.currentDNSFailures++;
+        }
     }
 
     /// <summary>
@@ -70,21 +89,29 @@ public class DnsChecks
     /// Puts the string output of all of the awverify records into the AppService argument so the list can be used later.
     /// </summary>
     /// <param name="appService"></param>
-    public static void GetHostnameAwverifyRecords(AppService appService)
+    public static void GetHostnameAwverifyRecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
         IDnsResolver resolver = new DnsStubResolver();
 
         string awverifyRecordURL = "awverify." + appService.CustomHostname;
-        // TODO: See what exceptions this may throw if DNS lookup fails
-        List<CNameRecord> awverifyCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, awverifyRecordURL, RecordType.CName, RecordClass.Any);
-
-        List<string> awverifyRecords = new List<string>();
-        foreach(CNameRecord awverifyCName in awverifyCNameRecords)
+        // TODO: Verify that this works and doesn't break current logic
+        try
         {
-            awverifyRecords.Add(awverifyCName.CanonicalName.ToString());
-        }
+            List<CNameRecord> awverifyCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, awverifyRecordURL, RecordType.CName, RecordClass.Any);
 
-        appService.HostnameAwverifyCNameRecords = awverifyRecords;
+            List<string> awverifyRecords = new List<string>();
+            foreach (CNameRecord awverifyCName in awverifyCNameRecords)
+            {
+                awverifyRecords.Add(awverifyCName.CanonicalName.ToString());
+            }
+
+            appService.HostnameAwverifyCNameRecords = awverifyRecords;
+        } 
+        catch
+        {
+            dnsCheckErrors.hostnameAwverifyRecordLookupFailed = true;
+            dnsCheckErrors.currentDNSFailures++;
+        }
     }
 
     /// <summary>
@@ -92,19 +119,27 @@ public class DnsChecks
     /// Puts the string output of all of the CNAME records into the AppService argument so the list can be used later.
     /// </summary>
     /// <param name="appService">The object that holds all of the information the user has given, including the custom hostname.</param>
-    public static void GetHostnameCNameRecords(AppService appService)
+    public static void GetHostnameCNameRecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
         IDnsResolver resolver = new DnsStubResolver();
-        // TODO: See what exceptions this may throw if DNS lookup fails
-        List<CNameRecord> cNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.CustomHostname, RecordType.CName, RecordClass.Any);
-
-        List<string> cNames = new List<string>();
-        foreach (CNameRecord cName in cNameRecords)
+        // TODO: Verify that this works and doesn't break current logic
+        try
         {
-            cNames.Add(cName.CanonicalName.ToString());
-        }
+            List<CNameRecord> cNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.CustomHostname, RecordType.CName, RecordClass.Any);
 
-        appService.HostnameCNameRecords = cNames;
+            List<string> cNames = new List<string>();
+            foreach (CNameRecord cName in cNameRecords)
+            {
+                cNames.Add(cName.CanonicalName.ToString());
+            }
+
+            appService.HostnameCNameRecords = cNames;
+        }
+        catch
+        {
+            dnsCheckErrors.hostnameCNameRecordLookupFailed = true;
+            dnsCheckErrors.currentDNSFailures++;
+        }
     }
 
     /// <summary>
@@ -113,19 +148,27 @@ public class DnsChecks
     /// Puts the string output of all of the Traffic Manager CNAME records into the AppService argument so the list can be used later.
     /// </summary>
     /// <param name="appService">The object that holds all the information the user has given, including the Traffic Manager name.</param>
-    public static void GetTrafficManagerCNameRecords(AppService appService)
+    public static void GetTrafficManagerCNameRecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
         IDnsResolver resolver = new DnsStubResolver();
-        // TODO: See what exceptions this may throw if DNS lookup fails
-        List<CNameRecord> trafficManagerCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.TmName + "." + appService.TrafficManagerURLEnding, RecordType.CName, RecordClass.Any);
-
-        List<string> trafficManagerCNames = new List<string>();
-        foreach (CNameRecord trafficManagerCName in trafficManagerCNameRecords)
+        // TODO: Verify that this works and doesn't break current logic
+        try
         {
-            trafficManagerCNames.Add(trafficManagerCName.CanonicalName.ToString());
-        }
+            List<CNameRecord> trafficManagerCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.TmName + "." + appService.TrafficManagerURLEnding, RecordType.CName, RecordClass.Any);
 
-        appService.TrafficManagerCNameRecords = trafficManagerCNames;
+            List<string> trafficManagerCNames = new List<string>();
+            foreach (CNameRecord trafficManagerCName in trafficManagerCNameRecords)
+            {
+                trafficManagerCNames.Add(trafficManagerCName.CanonicalName.ToString());
+            }
+
+            appService.TrafficManagerCNameRecords = trafficManagerCNames;
+        }
+        catch
+        {
+            dnsCheckErrors.trafficManagerCNameRecordLookupFailed = true;
+            dnsCheckErrors.currentDNSFailures++;
+        }
     }
 
     /// <summary>
@@ -133,18 +176,26 @@ public class DnsChecks
     /// Puts the string output of all of the TXT records into the AppService argument so the list can be used later.
     /// </summary>
     /// <param name="appService"></param>
-    public static void GetHostnameTxtRecords(AppService appService)
+    public static void GetHostnameTxtRecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
         IDnsResolver resolver = new DnsStubResolver();
-        // TODO: See what exceptions this may throw if DNS lookup fails
-        List<TxtRecord> txtRecords = DnsResolverExtensions.Resolve<TxtRecord>(resolver, appService.CustomHostname, RecordType.Txt, RecordClass.Any);
-
-        List<string> txts = new List<string>();
-        foreach (TxtRecord txtRecord in txtRecords)
+        // TODO: Verify that this works and doesn't break current logic
+        try
         {
-            txts.Add(txtRecord.TextData.ToString());
-        }
+            List<TxtRecord> txtRecords = DnsResolverExtensions.Resolve<TxtRecord>(resolver, appService.CustomHostname, RecordType.Txt, RecordClass.Any);
 
-        appService.HostnameTxtRecords = txts;
+            List<string> txts = new List<string>();
+            foreach (TxtRecord txtRecord in txtRecords)
+            {
+                txts.Add(txtRecord.TextData.ToString());
+            }
+
+            appService.HostnameTxtRecords = txts;
+        }
+        catch
+        {
+            dnsCheckErrors.hostnameTxtRecordLookupFailed = true;
+            dnsCheckErrors.currentDNSFailures++;
+        }
     }
 }

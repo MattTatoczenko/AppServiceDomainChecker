@@ -45,6 +45,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Objects", "Objects", "{1E92D742-1E11-47DE-942D-536DFE4CA34C}"
 	ProjectSection(SolutionItems) = preProject
 		Objects\AppService.cs = Objects\AppService.cs
+		Objects\DNSCheckErrors.cs = Objects\DNSCheckErrors.cs
 	EndProjectSection
 EndProject
 Global

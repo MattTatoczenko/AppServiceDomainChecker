@@ -1,6 +1,7 @@
 #load "..\Objects\AppService.cs"
 #load "..\Helper\InputCheckers.cs"
 #load "..\Helper\DnsChecks.cs"
+#load "..\Objects\DNSCheckErrors.cs"
 
 using System;
 using System.Collections;
@@ -11,17 +12,18 @@ using System.Threading.Tasks;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Connector;
 
-// For more information about this template visit http://aka.ms/azurebots-csharp-basic
 [Serializable]
 public class CheckerDialog : IDialog<object>
 {
     private AppService appService;
+    private DNSCheckErrors dnsCheckErrors;
     private bool receivedAllCustomerInformation;
 
     public Task StartAsync(IDialogContext context)
     {
         try
         {
+            receivedAllCustomerInformation = false;
             context.Wait(InitialInformationOnAppServicechecker);
         }
         catch (OperationCanceledException error)
@@ -45,13 +47,17 @@ public class CheckerDialog : IDialog<object>
     /// <returns>No returns.</returns>
     public async Task InitialInformationOnAppServicechecker(IDialogContext context, IAwaitable<IMessageActivity> argument)
     {
-        receivedAllCustomerInformation = false;
         string message = "I am here to help with checking your custom hostname/domain and seeing if it is configured properly for use on your Azure App Service.\n\n";
         message += "I will ask you information about your App Service, including whether you use Traffic Manager with your App Service and whether the App Service is in an App Service Environment or not.\n\n";
         message += "After getting all of the information on your App Service, I will do some DNS checks to pull information on the App Service and the hostname.\n\n";
         message += "Finally, I will present all of this information to you. After that, you can check another App Service and another domain if you want.";
 
         await context.PostAsync(message);
+        
+        // Initialize the instance objects and variable
+        receivedAllCustomerInformation = false;
+        this.appService = new AppService();
+        this.dnsCheckErrors = new DNSCheckErrors();
 
         await CheckUseOfAppServiceEnvironment(context);
     }
@@ -87,7 +93,7 @@ public class CheckerDialog : IDialog<object>
     public async Task ConfirmUseOfAppServiceEnvironment(IDialogContext context, IAwaitable<bool> argument)
     {
         var confirm = await argument;
-        this.appService = new AppService();
+        
         if (confirm)
         {
             await context.PostAsync("You're using an App Service Environment. We'll need the name of the App Service Environment.");
@@ -609,17 +615,31 @@ public class CheckerDialog : IDialog<object>
     {
         await context.PostAsync("Let's pull some information on the hostname entered.");
 
-        DnsChecks.GetAppServiceIPAddress(this.appService);     
+        int dnsErrorsBeforeChecks = this.dnsCheckErrors.currentDNSFailures;
 
-        DnsChecks.GetHostnameARecords(this.appService);
+        DnsChecks.GetAppServiceIPAddress(this.appService, this.dnsCheckErrors);
 
-        DnsChecks.GetHostnameAwverifyRecords(this.appService);
+        if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
+        {
+            DnsChecks.GetHostnameARecords(this.appService, this.dnsCheckErrors);
+        }
 
-        DnsChecks.GetHostnameCNameRecords(this.appService);
+        if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
+        {
+            DnsChecks.GetHostnameAwverifyRecords(this.appService, this.dnsCheckErrors);
+        }
+
+        if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
+        {
+            DnsChecks.GetHostnameCNameRecords(this.appService, this.dnsCheckErrors);
+        }
 
         if (this.appService.UsingTM)
         {
-            DnsChecks.GetTrafficManagerCNameRecords(this.appService);
+            if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
+            {
+                DnsChecks.GetTrafficManagerCNameRecords(this.appService, this.dnsCheckErrors);
+            }
             /* Print out all of the Traffic Manager CNAME records if there are any (there should be if they are using Traffic Manager)
             foreach (string trafficManagerCName in this.appService.TrafficManagerCNameRecords)
             {
@@ -627,7 +647,10 @@ public class CheckerDialog : IDialog<object>
             } */
         }
 
-        DnsChecks.GetHostnameTxtRecords(this.appService);
+        if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
+        {
+            DnsChecks.GetHostnameTxtRecords(this.appService, this.dnsCheckErrors);
+        }
 
         // TODO: Remove all of the PostAsync calls here. They are used for debug/test purposes. Currently commented out, but remove them before publishing.
 
@@ -657,7 +680,54 @@ public class CheckerDialog : IDialog<object>
             await context.PostAsync($"TXT Record: {txtRecord}");
         } */
 
-        await PresentDNSInformation(context);
+        await CheckForDNSErrors(context);
+    }
+
+    public async Task CheckForDNSErrors(IDialogContext context)
+    {
+        if (this.dnsCheckErrors.appServiceIPLookupFailed || this.dnsCheckErrors.hostnameARecordLookupFailed || this.dnsCheckErrors.hostnameAwverifyRecordLookupFailed || this.dnsCheckErrors.hostnameCNameRecordLookupFailed || this.dnsCheckErrors.trafficManagerCNameRecordLookupFailed || this.dnsCheckErrors.hostnameTxtRecordLookupFailed)
+        {
+            if(this.dnsCheckErrors.currentDNSFailures >= DNSCheckErrors.MaxDNSFailures)
+            {
+                await context.PostAsync("I am sorry. I am having a lot of issues with pulling DNS information. Please try to check the hostname information later. When you are ready to check the domain again, press anything to restart.");
+                context.Wait(InitialInformationOnAppServicechecker);
+            }
+            else
+            {
+                if (this.dnsCheckErrors.appServiceIPLookupFailed)
+                {
+                    await context.PostAsync("I was unable to pull DNS information on the IP address of your App Service.");
+                }
+                if (this.dnsCheckErrors.hostnameARecordLookupFailed)
+                {
+                    await context.PostAsync("I was unable to pull DNS information on the A records for your hostname.");
+                }
+                if (this.dnsCheckErrors.hostnameAwverifyRecordLookupFailed)
+                {
+                    await context.PostAsync("I was unable to pull DNS information on any potential awverify CNAME records for your domain.");
+                }
+                if (this.dnsCheckErrors.hostnameCNameRecordLookupFailed)
+                {
+                    await context.PostAsync("I was unable to pull DNS information on the CNAME records for your domain.");
+                }
+                if (this.dnsCheckErrors.trafficManagerCNameRecordLookupFailed)
+                {
+                    await context.PostAsync("I was unable to pull DNS information on any CNAME records associated with your Traffic Manager.");
+                }
+                if (this.dnsCheckErrors.hostnameTxtRecordLookupFailed)
+                {
+                    await context.PostAsync("I was unable to pull DNS information on the TXT records associated with your domain.");
+                }
+
+                await context.PostAsync("Let me try to get the DNS information I wasn't able to get before.");
+
+                await DoDNSChecks(context);
+            }
+        }
+        else
+        {
+            await PresentDNSInformation(context);
+        }
     }
 
     public async Task PresentDNSInformation(IDialogContext context)
@@ -929,21 +999,8 @@ public class CheckerDialog : IDialog<object>
         string message = $"I am done checking the custom domain of \"{this.appService.CustomHostname}\".\n\n";
         message += "If you wish to check another custom domain, type in anything and we will restart the domain checker.";
         await context.PostAsync(message); 
-        context.Wait(RestartMessageReceivedAsync);
-    }
 
-    /// <summary>
-    /// Ending point for the domain checker.
-    /// If the user types anything into the chat window, we will restart.
-    /// </summary>
-    /// <param name="context">Context needed for the convesation to occur. Used to either repeat what the user enters or provide a confirmation prompt.</param>
-    /// <param name="argument">Any message the user enters into the chat window.</param>
-    /// <returns>NO returns.</returns>
-    public virtual async Task RestartMessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> argument)
-    {
-        var message = await argument;
-        await context.PostAsync("Let's check another domain!");
-        receivedAllCustomerInformation = false;
+        // Send the user back to the beginning of the checker dialog, where we give them an overview of what we are doing and ask them some initial info on the App Service
         context.Wait(InitialInformationOnAppServicechecker);
     }
 }
