@@ -640,45 +640,12 @@ public class CheckerDialog : IDialog<object>
             {
                 DnsChecks.GetTrafficManagerCNameRecords(this.appService, this.dnsCheckErrors);
             }
-            /* Print out all of the Traffic Manager CNAME records if there are any (there should be if they are using Traffic Manager)
-            foreach (string trafficManagerCName in this.appService.TrafficManagerCNameRecords)
-            {
-                await context.PostAsync($"Traffic Manager CNAME record: {trafficManagerCName}");
-            } */
         }
 
         if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
         {
             DnsChecks.GetHostnameTxtRecords(this.appService, this.dnsCheckErrors);
         }
-
-        // TODO: Remove all of the PostAsync calls here. They are used for debug/test purposes. Currently commented out, but remove them before publishing.
-
-        /* Print out all of the IP addresses that correspond to the App Service URL
-        foreach (string appServiceAddress in this.appService.IPAddresses)
-        {
-            await context.PostAsync($"App Service IP: {appServiceAddress}");
-        }
-        // Print out all of the A records configured for the hostname, if there are any
-        foreach (string aRecord in this.appService.HostnameARecords)
-        {
-            await context.PostAsync($"A Record: {aRecord}");
-        }
-        // Print out all of the AWVERIFY CNAME records configured for the hostname, if there are any
-        foreach (string awverifyRecord in this.appService.HostnameAwverifyCNameRecords)
-        {
-            await context.PostAsync($"AWVerify CNAME record: {awverifyRecord}");
-        }
-        // Print out all the CNAME records configured for the hostname, if there are any
-        foreach (string cName in this.appService.HostnameCNameRecords)
-        {
-            await context.PostAsync($"CNAME Record: {cName}");
-        }
-        // Print out all of the TXT records configured for the hostname, if there are any
-        foreach (string txtRecord in this.appService.HostnameTxtRecords)
-        {
-            await context.PostAsync($"TXT Record: {txtRecord}");
-        } */
 
         await CheckForDNSErrors(context);
     }
@@ -999,8 +966,5 @@ public class CheckerDialog : IDialog<object>
         string message = $"I am done checking the custom domain of \"{this.appService.CustomHostname}\".\n\n";
         message += "If you wish to check another custom domain, type in anything and we will restart the domain checker.";
         await context.PostAsync(message); 
-
-        // Send the user back to the beginning of the checker dialog, where we give them an overview of what we are doing and ask them some initial info on the App Service
-        context.Wait(InitialInformationOnAppServicechecker);
     }
 }
