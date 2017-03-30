@@ -15,10 +15,16 @@ using Microsoft.Bot.Connector;
 [Serializable]
 public class CheckerDialog : IDialog<object>
 {
+    // Instance variables used later on to collect user information and check for errors in pulling DNS information.
     private AppService appService;
     private DNSCheckErrors dnsCheckErrors;
     private bool receivedAllCustomerInformation;
 
+    /// <summary>
+    /// Start the dialog flow
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur.</param>
+    /// <returns>Return whether the task was completed, canceled, or errored out.</returns>
     public Task StartAsync(IDialogContext context)
     {
         try
@@ -68,7 +74,6 @@ public class CheckerDialog : IDialog<object>
     /// Users will choose "Yes" or "No".
     /// </summary>
     /// <param name="context">Context needed for the convesation to occur. Used to have a confirmation dialog about the use of an App Service Environment.</param>
-    /// <param name="argument">Supposed to be the argument a user puts into the chat window. Not used by this method.</param>
     /// <returns>No returns.</returns>
     public async Task CheckUseOfAppServiceEnvironment(IDialogContext context)
     {
@@ -454,9 +459,9 @@ public class CheckerDialog : IDialog<object>
     /// If they confirm it, we will finish asking the user to input data and confirm all the data entered so far is correct
     /// If they need to adjust the hostname, send them back to the prompt to have them enter the right hostname.
     /// </summary>
-    /// <param name="context"></param>
-    /// <param name="argument"></param>
-    /// <returns></returns>
+    /// <param name="context">Context needed for the convesation to occur. Used to provide a text update to the user.</param>
+    /// <param name="argument">Boolean value for whether the customer confirmed that the hostname is correct or not.</param>
+    /// <returns>No returns.</returns>
     public async Task ConfirmCustomHostname(IDialogContext context, IAwaitable<bool> argument)
     {
         var confirm = await argument;
@@ -652,6 +657,11 @@ public class CheckerDialog : IDialog<object>
         await CheckForDNSErrors(context);
     }
 
+    /// <summary>
+    /// Intermediate area where we provide feedback to the user if there were errors when pulling DNS information.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to provide text updates to the user.</param>
+    /// <returns>No returns.</returns>
     public async Task CheckForDNSErrors(IDialogContext context)
     {
         if (this.dnsCheckErrors.appServiceIPLookupFailed || this.dnsCheckErrors.hostnameARecordLookupFailed || this.dnsCheckErrors.hostnameAwverifyRecordLookupFailed || this.dnsCheckErrors.hostnameCNameRecordLookupFailed || this.dnsCheckErrors.trafficManagerCNameRecordLookupFailed || this.dnsCheckErrors.hostnameTxtRecordLookupFailed)
@@ -699,6 +709,13 @@ public class CheckerDialog : IDialog<object>
         }
     }
 
+    /// <summary>
+    /// Based on all of the inforamtion the customer entered and the information we pulled from DNS, we provide feedback to the user.
+    /// Provides feedback on whether the custom domains are configured properly for the App Service or not.
+    /// Lots of if/else logic here needed to properly figure out if the configuration is correct or not.
+    /// </summary>
+    /// <param name="context">Context needed for the convesation to occur. Used to provide text updates to the user about their hostname configuration.</param>
+    /// <returns>No returns. The buck stops here.</returns>
     public async Task PresentDNSInformation(IDialogContext context)
     {
         // Setting up some initial strings for the App Service. Mostly what the full URLs look like
