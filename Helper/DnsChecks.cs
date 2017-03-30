@@ -34,7 +34,6 @@ public class DnsChecks
 
         IDnsResolver resolver = new DnsStubResolver();
        
-        // TODO: Verify that this works and doesn't break current logic
         try
         {
             List<IPAddress> addresses = DnsResolverExtensions.ResolveHost(resolver, fullAppServiceURL);
@@ -62,7 +61,6 @@ public class DnsChecks
     public static void GetHostnameARecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
         IDnsResolver resolver = new DnsStubResolver();
-        // TODO: Verify that this works and doesn't break current logic
         try
         {
             List<ARecord> aRecords = DnsResolverExtensions.Resolve<ARecord>(resolver, appService.CustomHostname, RecordType.A, RecordClass.Any);
@@ -94,7 +92,6 @@ public class DnsChecks
         IDnsResolver resolver = new DnsStubResolver();
 
         string awverifyRecordURL = "awverify." + appService.CustomHostname;
-        // TODO: Verify that this works and doesn't break current logic
         try
         {
             List<CNameRecord> awverifyCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, awverifyRecordURL, RecordType.CName, RecordClass.Any);
@@ -122,7 +119,6 @@ public class DnsChecks
     public static void GetHostnameCNameRecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
         IDnsResolver resolver = new DnsStubResolver();
-        // TODO: Verify that this works and doesn't break current logic
         try
         {
             List<CNameRecord> cNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.CustomHostname, RecordType.CName, RecordClass.Any);
@@ -151,7 +147,6 @@ public class DnsChecks
     public static void GetTrafficManagerCNameRecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
         IDnsResolver resolver = new DnsStubResolver();
-        // TODO: Verify that this works and doesn't break current logic
         try
         {
             List<CNameRecord> trafficManagerCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.TmName + "." + appService.TrafficManagerURLEnding, RecordType.CName, RecordClass.Any);
@@ -179,7 +174,6 @@ public class DnsChecks
     public static void GetHostnameTxtRecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
         IDnsResolver resolver = new DnsStubResolver();
-        // TODO: Verify that this works and doesn't break current logic
         try
         {
             List<TxtRecord> txtRecords = DnsResolverExtensions.Resolve<TxtRecord>(resolver, appService.CustomHostname, RecordType.Txt, RecordClass.Any);

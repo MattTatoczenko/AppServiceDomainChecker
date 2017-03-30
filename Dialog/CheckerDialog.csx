@@ -78,6 +78,7 @@ public class CheckerDialog : IDialog<object>
             context,
             ConfirmUseOfAppServiceEnvironment,
             "Is your App Service inside of an App Service Environment?",
+            "Please answer 'Yes' or 'No' for this question: Is your App Service inside of an App Service Environment?",
             promptStyle: PromptStyle.Auto);
     }
 
@@ -566,6 +567,7 @@ public class CheckerDialog : IDialog<object>
             GetAppServiceInformationToChange,
             appServiceInfoOptions,
             "What information on your App Service does not look right?",
+            "Please tell me the information about your App Service that does not look right.",
             promptStyle: PromptStyle.Auto);
     }
 
