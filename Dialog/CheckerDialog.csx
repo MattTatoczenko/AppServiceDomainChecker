@@ -703,15 +703,21 @@ public class CheckerDialog : IDialog<object>
     {
         // Setting up some initial strings for the App Service. Mostly what the full URLs look like
         string fullAppServiceURL = "";
+        // Used when there is an SNI-based SSL binding for the App Service in combination with an IP-based SSL binding on the App Service
+        string fullAppServiceURLSNI = "";
         if (this.appService.IsASE)
         {
             fullAppServiceURL = this.appService.AppServiceName + "." + this.appService.AseName + ".p." + this.appService.AppServiceURLEnding;
+            fullAppServiceURLSNI = "sni." + this.appService.AppServiceName + "." + this.appService.AseName + ".p." + this.appService.AppServiceURLEnding;
         }
         else
         {
             fullAppServiceURL = this.appService.AppServiceName + "." + this.appService.AppServiceURLEnding;
+            fullAppServiceURLSNI = "sni." + this.appService.AppServiceName + "." + this.appService.AppServiceURLEnding;
         }
         string fullAppServiceURLDNSStyle = fullAppServiceURL + ".";
+        string fullAppServiceURLSNIDNSStyle = fullAppServiceURLSNI + ".";
+        
 
         // Check if the App Service exists. If it does, we should be able to find an IP address for it.
         if (this.appService.IPAddresses.Count() > 0)
@@ -883,6 +889,20 @@ public class CheckerDialog : IDialog<object>
                                                             to the ""{this.appService.AppServiceName}"" App Service.");
                                 }
                             }
+                            // Also check if the CNAME matches the SNI endpoint for the App Service, which is needed when there is a combination of IP-based and SNI-based SSL endpoints on the App Service
+                            else if (cNameRecord.Equals(fullAppServiceURLSNIDNSStyle))
+                            {
+                                if (this.appService.IsASE)
+                                {
+                                    await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the SNI endpoint for the App Service.
+                                                            If you wish to continue to use Traffic Manager with this hostname, consider updating the CNAME record as mentioned above.");
+                                }
+                                else
+                                {
+                                    await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the SNI endpoint for the App Service.
+                                                            If you wish to continue to use Traffic Manager with this hostname, consider updating the CNAME record as mentioned above.");
+                                }
+                            }
                         }
                     }
                     else
@@ -900,6 +920,20 @@ public class CheckerDialog : IDialog<object>
                                 await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the App Service URL. 
                                                         This CNAME record is configured properly for the ""{this.appService.AppServiceName}"" App Service.");
                             }
+                        }
+                        else if (cNameRecord.Equals(fullAppServiceURLSNIDNSStyle))
+                        {
+                            if (this.appService.IsASE)
+                            {
+                                await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the SNI endpoint for the App Service.
+                                                           This CNAME record is configured properly for use on the ""{this.appService.AppServiceName}"" App Service in the ""{this.appService.AseName}"" App Service Environment if this hostname is using an SNI-based SSL binding.");
+                            }
+                            else
+                            {
+                                await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the SNI endpoint for the App Service.
+                                                           This CNAME record is configured properly for use on the ""{this.appService.AppServiceName}"" App Service if this hostname is using an SNI-based SSL binding.");
+                            }
+                            await context.PostAsync("For more information on why this CNAME configuration is acceptable, see this document: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-configure-ssl-certificate#step-3-change-your-domain-name-mapping-ip-based-ssl-only");
                         }
                         else
                         {
