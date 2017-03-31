@@ -912,11 +912,13 @@ public class CheckerDialog : IDialog<object>
                                 if (this.appService.IsASE)
                                 {
                                     await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the SNI endpoint for the App Service.
+                                                            However, you will not be able to add the hostname of ""{this.appService.CustomHostname}"" to the ""{this.appService.AppServiceName}"" App Service. 
                                                             If you wish to continue to use Traffic Manager with this hostname, consider updating the CNAME record as mentioned above.");
                                 }
                                 else
                                 {
                                     await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the SNI endpoint for the App Service.
+                                                            However, you will not be able to add the hostname of ""{this.appService.CustomHostname}"" to the ""{this.appService.AppServiceName}"" App Service. 
                                                             If you wish to continue to use Traffic Manager with this hostname, consider updating the CNAME record as mentioned above.");
                                 }
                             }
@@ -938,17 +940,22 @@ public class CheckerDialog : IDialog<object>
                                                         This CNAME record is configured properly for the ""{this.appService.AppServiceName}"" App Service.");
                             }
                         }
+                        // Also check if the CNAME matches the SNI-based SSL endpoint for the App Service. This is used if the hostname uses an SNI binding where the App Service also has an IP-based SSL binding
                         else if (cNameRecord.Equals(fullAppServiceURLSNIDNSStyle))
                         {
                             if (this.appService.IsASE)
                             {
                                 await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the SNI endpoint for the App Service.
-                                                           This CNAME record is configured properly for use on the ""{this.appService.AppServiceName}"" App Service in the ""{this.appService.AseName}"" App Service Environment if this hostname is using an SNI-based SSL binding.");
+                                                        This CNAME record is configured properly for use on the ""{this.appService.AppServiceName}"" App Service in the ""{this.appService.AseName}"" App Service Environment if this hostname is using an SNI-based SSL binding..
+                                                        However, you will not be able to add the hostname of ""{this.appService.CustomHostname}"" to the ""{this.appService.AppServiceName}"" App Service with this record. 
+                                                        This record is only used after the hostname is added to the App Service.");
                             }
                             else
                             {
                                 await context.PostAsync($@"The DNS CNAME record configured, which points to {cNameRecord}, matches the SNI endpoint for the App Service.
-                                                           This CNAME record is configured properly for use on the ""{this.appService.AppServiceName}"" App Service if this hostname is using an SNI-based SSL binding.");
+                                                        This CNAME record is configured properly for use on the ""{this.appService.AppServiceName}"" App Service if this hostname is using an SNI-based SSL binding. 
+                                                        However, you will not be able to add the hostname of ""{this.appService.CustomHostname}"" to the ""{this.appService.AppServiceName}"" App Service with this record. 
+                                                        This record is only used after the hostname is added to the App Service.");
                             }
                             await context.PostAsync("For more information on why this CNAME configuration is acceptable, see this document: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-configure-ssl-certificate#step-3-change-your-domain-name-mapping-ip-based-ssl-only");
                         }
