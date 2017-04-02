@@ -56,7 +56,8 @@ public class CheckerDialog : IDialog<object>
         string message = "I am here to help with checking your custom hostname/domain and seeing if it is configured properly for use on your Azure App Service.\n\n";
         message += "I will ask you information about your App Service, including whether you use Traffic Manager with your App Service and whether the App Service is in an App Service Environment or not.\n\n";
         message += "After getting all of the information on your App Service, I will do some DNS checks to pull information on the App Service and the hostname.\n\n";
-        message += "Finally, I will present all of this information to you. After that, you can check another App Service and another domain if you want.";
+        message += "Finally, I will present all of this information to you. After that, you can check another App Service and another domain if you want.\n\n";
+        message += "For more info on this bot, visit this page: https://matttatoczenko.github.io/AppServiceDomainChecker/";
 
         await context.PostAsync(message);
         
