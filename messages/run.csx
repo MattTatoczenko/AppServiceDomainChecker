@@ -30,35 +30,41 @@ public static async Task<object> Run(HttpRequestMessage req, TraceWriter log)
         
         if (activity != null)
         {
-            // one of these will have an interface and process it
-            switch (activity.GetActivityType())
+            if (activity.Type == ActivityTypes.Message)
             {
-                case ActivityTypes.Message:
-                    await Conversation.SendAsync(activity, () => new CheckerDialog());
-                    break;
-                case ActivityTypes.ConversationUpdate:
-                    var client = new ConnectorClient(new Uri(activity.ServiceUrl));
-                    IConversationUpdateActivity update = activity;                    
-                    if (update.MembersAdded.Any())
-                    {
-                        var reply = activity.CreateReply();
-                        var newMembers = update.MembersAdded?.Where(t => t.Id != activity.Recipient.Id);
-                        foreach (var newMember in newMembers)
-                        {
-                            reply.Text = "Hello! I am the Azure App Service Domain Checker.\n\n";
-                            reply.Text += $"First, by using this bot, you agree to my Privacy Statement and Terms of Service here: https://matttatoczenko.github.io/AppServiceDomainChecker/ \n\n";
-                            reply.Text += "Type anything to start our interaction.";
-                            await client.Conversations.ReplyToActivityAsync(reply);
-                        }
-                    } 
-                    break;
-                case ActivityTypes.ContactRelationUpdate:
-                case ActivityTypes.Typing:
-                case ActivityTypes.DeleteUserData:
-                case ActivityTypes.Ping:
-                default:
-                    log.Error($"Unknown activity type ignored: {activity.GetActivityType()}");
-                    break;
+                await Conversation.SendAsync(activity, () => new CheckerDialog());
+            }
+            else if (activity.Type == ActivityTypes.DeleteUserData)
+            {
+                // User Data Deletion not implemented
+
+            }
+            else if (activity.Type == ActivityTypes.ConversationUpdate)
+            {
+                if (activity.MembersAdded.Any(o => o.Id == activity.Recipient.Id))
+                {
+                    ConnectorClient client = new ConnectorClient(new Uri(activity.ServiceUrl));
+
+                    var reply = activity.CreateReply();
+
+                    reply.Text = "Hello! I am the Azure App Service Domain Checker.\n\n";
+                    reply.Text += $"First, by using this bot, you agree to my Privacy Statement and Terms of Service here: https://matttatoczenko.github.io/AppServiceDomainChecker/ \n\n";
+                    reply.Text += "Type anything to start our interaction.";
+
+                    await client.Conversations.ReplyToActivityAsync(reply);
+                }
+            }
+            else if (activity.Type == ActivityTypes.ContactRelationUpdate)
+            {
+                // Handle add/remove from contact lists not implemented
+            }
+            else if (activity.Type == ActivityTypes.Typing)
+            {
+                // Handle knowing tha the user is typing not implemented
+            }
+            else if (activity.Type == ActivityTypes.Ping)
+            {
+                // Handle pings not implemented
             }
         }
         return req.CreateResponse(HttpStatusCode.Accepted);
