@@ -791,7 +791,7 @@ public class CheckerDialog : IDialog<object>
                         // Tell the user what they need to configure in regards to the TXT or awverify CNAME record. Also link to the online guide on how to configure the records.
                         stepsForAddingOtherRecords += $"For a TXT record, configure a TXT record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\"\n\n";
                         stepsForAddingOtherRecords += $"For an awverify CNAME record, configure a CNAME record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\"\n\n";
-                        string moreInfoARecords = "For more information, please visit: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-custom-domain-name#a";
+                        string moreInfoARecords = "For more information, please visit: https://docs.microsoft.com/en-us/azure/app-service-web/app-service-web-tutorial-custom-domain#map-an-a-record";
                         await context.PostAsync(didNotFindTXTorAwverify);
                         await context.PostAsync(stepsForAddingOtherRecords);
                         await context.PostAsync(moreInfoARecords);
@@ -842,7 +842,7 @@ public class CheckerDialog : IDialog<object>
                     }
 
                     // Provide general link on configuring DNS A records for App Services
-                    await context.PostAsync("For more information on configuring the DNS records, see this guide: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-custom-domain-name#a");
+                    await context.PostAsync("For more information on configuring the DNS records, see this guide: https://docs.microsoft.com/en-us/azure/app-service-web/app-service-web-tutorial-custom-domain#map-an-a-record");
                 }
             }
             else if (this.appService.HostnameCNameRecords.Count() > 0)
@@ -960,7 +960,7 @@ public class CheckerDialog : IDialog<object>
                                 hostnameRecordMatchesSNI += "This record is only used after the hostname is added to the App Service.";
                                 await context.PostAsync(hostnameRecordMatchesSNI);
                             }
-                            await context.PostAsync("For more information on why this CNAME configuration is acceptable, see this document: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-configure-ssl-certificate#step-3-change-your-domain-name-mapping-ip-based-ssl-only");
+                            await context.PostAsync("For more information on why this CNAME configuration is acceptable, see this document: https://github.com/Microsoft/azure-docs/blob/53fb8ea335e85d889ed90a2c14162225861012a1/articles/app-service-web/web-sites-configure-ssl-certificate.md#step-3-change-your-domain-name-mapping-ip-based-ssl-only");
                         }
                         else
                         {
@@ -988,7 +988,7 @@ public class CheckerDialog : IDialog<object>
                             }
 
                             // Provide the online document that lists out how to configure the CNAME records
-                            await context.PostAsync("For more information on configuring CNAME records, see this guide: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-custom-domain-name#cname");
+                            await context.PostAsync("For more information on configuring CNAME records, see this guide: https://docs.microsoft.com/en-us/azure/app-service-web/app-service-web-tutorial-custom-domain#map-a-cname-record");
                         }
                     }
                 }
@@ -1008,7 +1008,7 @@ public class CheckerDialog : IDialog<object>
                 await context.PostAsync($"For a CNAME record, configure a CNAME record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\".");
 
                 // Provide the online document on configuring hostnames
-                await context.PostAsync("For more information on configuring hostnames for use on Azure App Services, see this guide: https://docs.microsoft.com/en-us/azure/app-service-web/web-sites-custom-domain-name");
+                await context.PostAsync("For more information on configuring hostnames for use on Azure App Services, see this guide: https://docs.microsoft.com/en-us/azure/app-service-web/app-service-web-tutorial-custom-domain");
             }
         }
         else
