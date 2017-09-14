@@ -75,8 +75,8 @@ public class DnsChecks
         }
         catch
         {
-            dnsCheckErrors.hostnameARecordLookupFailed = true;
-            dnsCheckErrors.currentDNSFailures++;
+            //dnsCheckErrors.hostnameARecordLookupFailed = true;
+            //dnsCheckErrors.currentDNSFailures++;
         }
     }
 
