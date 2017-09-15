@@ -32,6 +32,21 @@ public class DnsChecks
             fullAppServiceURL = appService.AppServiceName + "." + appService.AppServiceURLEnding;
         }
 
+        /*byte[] server1 = new byte[] { 10, 20, 34, 100 };
+        byte[] server2 = new byte[] { 8, 8, 8, 8 };
+        byte[] server3 = new byte[] { 8, 8, 4, 4 };
+        byte[] server4 = new byte[] { 64, 6, 64, 6 };
+        IPAddress dnsServer1 = new IPAddress(server1);
+        IPAddress dnsServer2 = new IPAddress(server2);
+        IPAddress dnsServer3 = new IPAddress(server3);
+        IPAddress dnsServer4 = new IPAddress(server4);
+        List<IPAddress> serversForResolving = new List<IPAddress>();
+        serversForResolving.Add(dnsServer1);
+        serversForResolving.Add(dnsServer2);
+        serversForResolving.Add(dnsServer3);
+        serversForResolving.Add(dnsServer4);
+        IDnsResolver resolver = new DnsStubResolver(serversForResolving, 10000); */
+
         IDnsResolver resolver = new DnsStubResolver();
        
         try
@@ -60,21 +75,21 @@ public class DnsChecks
     /// <param name="appService">The object that holds all of the information the user has given, including the custom hostname.</param>
     public static void GetHostnameARecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
-        byte[] server1 = new byte[] { 10, 20, 34, 100 };
+        /* byte[] server1 = new byte[] { 10, 20, 34, 100 };
         byte[] server2 = new byte[] { 8, 8, 8, 8 };
-        //byte[] server3 = new byte[] { 8, 8, 4, 4 };
-        //byte[] server4 = new byte[] { 64, 6, 64, 6 };
+        byte[] server3 = new byte[] { 8, 8, 4, 4 };
+        byte[] server4 = new byte[] { 64, 6, 64, 6 };
         IPAddress dnsServer1 = new IPAddress(server1);
         IPAddress dnsServer2 = new IPAddress(server2);
-        //IPAddress dnsServer3 = new IPAddress(server3);
-        //IPAddress dnsServer4 = new IPAddress(server4);
+        IPAddress dnsServer3 = new IPAddress(server3);
+        IPAddress dnsServer4 = new IPAddress(server4);
         List<IPAddress> serversForResolving = new List<IPAddress>();
         serversForResolving.Add(dnsServer1);
         serversForResolving.Add(dnsServer2);
-        //serversForResolving.Add(dnsServer3);
-        //serversForResolving.Add(dnsServer4);
-        IDnsResolver resolver = new DnsStubResolver(serversForResolving, 10000);
-        //IDnsResolver resolver = new DnsStubResolver();
+        serversForResolving.Add(dnsServer3);
+        serversForResolving.Add(dnsServer4);
+        IDnsResolver resolver = new DnsStubResolver(serversForResolving, 10000); */
+        IDnsResolver resolver = new DnsStubResolver();
         try
         {
             List<ARecord> aRecords = DnsResolverExtensions.Resolve<ARecord>(resolver, appService.CustomHostname, RecordType.A, RecordClass.Any);

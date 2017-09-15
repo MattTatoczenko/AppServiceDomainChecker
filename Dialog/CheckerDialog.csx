@@ -60,6 +60,9 @@ public class CheckerDialog : IDialog<object>
         message += "For more info on this bot, visit this page: https://matttatoczenko.github.io/AppServiceDomainChecker/";
 
         await context.PostAsync(message);
+
+        string message2 = "Please note that we are currently having difficulties resolving DNS records. We are working on fixing that.";
+        await context.PostAsync(message2);
         
         // Initialize the instance objects and variable
         receivedAllCustomerInformation = false;
