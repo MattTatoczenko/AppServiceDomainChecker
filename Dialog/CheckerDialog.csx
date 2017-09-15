@@ -632,12 +632,12 @@ public class CheckerDialog : IDialog<object>
 
         if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
         {
-            DnsChecks.GetHostnameTxtRecords(this.appService, this.dnsCheckErrors);
+            DnsChecks.GetHostnameARecords(this.appService, this.dnsCheckErrors);
         }
 
         if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
         {
-            DnsChecks.GetHostnameARecords(this.appService, this.dnsCheckErrors);
+            DnsChecks.GetHostnameTxtRecords(this.appService, this.dnsCheckErrors);
         }
 
         if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
