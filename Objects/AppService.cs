@@ -10,6 +10,7 @@ public class AppService
     private string tmName;
     private string appServiceName;
     private string customHostname;
+    private string customHostnameDNSStyle;
 
     private List<string> iPAddresses;
     private List<string> hostnameARecords;
@@ -90,6 +91,15 @@ public class AppService
         set
         {
             customHostname = value;
+            customHostnameDNSStyle = customHostname + ".";
+        }
+    }
+
+    public string CustomHostnameDNSStyle
+    {
+        get
+        {
+            return customHostnameDNSStyle;
         }
     }
 

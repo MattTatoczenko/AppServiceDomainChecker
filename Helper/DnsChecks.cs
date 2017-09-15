@@ -32,21 +32,6 @@ public class DnsChecks
             fullAppServiceURL = appService.AppServiceName + "." + appService.AppServiceURLEnding;
         }
 
-        /*byte[] server1 = new byte[] { 10, 20, 34, 100 };
-        byte[] server2 = new byte[] { 8, 8, 8, 8 };
-        byte[] server3 = new byte[] { 8, 8, 4, 4 };
-        byte[] server4 = new byte[] { 64, 6, 64, 6 };
-        IPAddress dnsServer1 = new IPAddress(server1);
-        IPAddress dnsServer2 = new IPAddress(server2);
-        IPAddress dnsServer3 = new IPAddress(server3);
-        IPAddress dnsServer4 = new IPAddress(server4);
-        List<IPAddress> serversForResolving = new List<IPAddress>();
-        serversForResolving.Add(dnsServer1);
-        serversForResolving.Add(dnsServer2);
-        serversForResolving.Add(dnsServer3);
-        serversForResolving.Add(dnsServer4);
-        IDnsResolver resolver = new DnsStubResolver(serversForResolving, 10000); */
-
         IDnsResolver resolver = new DnsStubResolver();
        
         try
@@ -75,26 +60,16 @@ public class DnsChecks
     /// <param name="appService">The object that holds all of the information the user has given, including the custom hostname.</param>
     public static void GetHostnameARecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
-        /* byte[] server1 = new byte[] { 10, 20, 34, 100 };
-        byte[] server2 = new byte[] { 8, 8, 8, 8 };
-        byte[] server3 = new byte[] { 8, 8, 4, 4 };
-        byte[] server4 = new byte[] { 64, 6, 64, 6 };
-        IPAddress dnsServer1 = new IPAddress(server1);
-        IPAddress dnsServer2 = new IPAddress(server2);
-        IPAddress dnsServer3 = new IPAddress(server3);
-        IPAddress dnsServer4 = new IPAddress(server4);
-        List<IPAddress> serversForResolving = new List<IPAddress>();
-        serversForResolving.Add(dnsServer1);
-        serversForResolving.Add(dnsServer2);
-        serversForResolving.Add(dnsServer3);
-        serversForResolving.Add(dnsServer4);
-        IDnsResolver resolver = new DnsStubResolver(serversForResolving, 10000); */
+        //IDnsResolver resolver = new DnsStubResolver();
 
-        IDnsResolver resolver = new DnsStubResolver();
+        // This is moved into the AppService class itself to prevent making the string multiple times
+        // string fullHostnameDNSStyle = appService.CustomHostname + ".";
+
         try
         {
-            /*
-            List<ARecord> aRecords = DnsResolverExtensions.Resolve<ARecord>(resolver, appService.CustomHostname, RecordType.A, RecordClass.Any); */
+            //List<ARecord> aRecords = DnsResolverExtensions.Resolve<ARecord>(resolver, appService.CustomHostname, RecordType.A, RecordClass.Any);
+
+            List<string> aRecordsStrings = new List<string>();
 
             DnsMessage dnsMessage = DnsClient.Default.Resolve(DomainName.Parse(appService.CustomHostname), RecordType.A);
             if ((dnsMessage == null) || ((dnsMessage.ReturnCode != ReturnCode.NoError) && (dnsMessage.ReturnCode != ReturnCode.NxDomain)))
@@ -103,10 +78,9 @@ public class DnsChecks
             }
             else
             {
-                List<string> aRecordsStrings = new List<string>();
                 foreach (DnsRecordBase dnsRecord in dnsMessage.AnswerRecords)
                 {
-                    if (dnsRecord.RecordType == RecordType.A && dnsRecord.Name.ToString() == appService.CustomHostname)
+                    if (dnsRecord.RecordType == RecordType.A && dnsRecord.Name.ToString() == appService.CustomHostnameDNSStyle)
                     {
                         ARecord aRecord = dnsRecord as ARecord;
                         if (aRecord != null)
@@ -115,7 +89,6 @@ public class DnsChecks
                         }
                     }
                 }
-                appService.HostnameARecords = aRecordsStrings;
             }
 
             /*
@@ -123,18 +96,15 @@ public class DnsChecks
             foreach (ARecord aRecord in aRecords)
             {
                 aRecordsStrings.Add(aRecord.Address.ToString());
-            }
+            } */
 
-            appService.HostnameARecords = aRecordsStrings; */
+            appService.HostnameARecords = aRecordsStrings;
         }
         catch
         {
             dnsCheckErrors.hostnameARecordLookupFailed = true;
             dnsCheckErrors.currentDNSFailures++;
         }
-
-
-
     }
 
     /// <summary>
@@ -146,18 +116,42 @@ public class DnsChecks
     /// <param name="appService"></param>
     public static void GetHostnameAwverifyRecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
-        IDnsResolver resolver = new DnsStubResolver();
+        //IDnsResolver resolver = new DnsStubResolver();
 
         string awverifyRecordURL = "awverify." + appService.CustomHostname;
+        string awverifyURLDNSStyle = awverifyRecordURL + ".";
+
         try
         {
-            List<CNameRecord> awverifyCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, awverifyRecordURL, RecordType.CName, RecordClass.Any);
+            // List<CNameRecord> awverifyCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, awverifyRecordURL, RecordType.CName, RecordClass.Any);
 
             List<string> awverifyRecords = new List<string>();
+
+            DnsMessage dnsMessage = DnsClient.Default.Resolve(DomainName.Parse(awverifyRecordURL), RecordType.CName);
+            if ((dnsMessage == null) || ((dnsMessage.ReturnCode != ReturnCode.NoError) && (dnsMessage.ReturnCode != ReturnCode.NxDomain)))
+            {
+                throw new Exception("DNS request failed");
+            }
+            else
+            {
+                foreach (DnsRecordBase dnsRecord in dnsMessage.AnswerRecords)
+                {
+                    if (dnsRecord.RecordType == RecordType.CName && dnsRecord.Name.ToString() == awverifyURLDNSStyle)
+                    {
+                        CNameRecord awverifyCNameRecord = dnsRecord as CNameRecord;
+                        if (awverifyCNameRecord != null)
+                        {
+                            awverifyRecords.Add(awverifyCNameRecord.CanonicalName.ToString());
+                        }
+                    }
+                }
+            }
+
+            /* List<string> awverifyRecords = new List<string>();
             foreach (CNameRecord awverifyCName in awverifyCNameRecords)
             {
                 awverifyRecords.Add(awverifyCName.CanonicalName.ToString());
-            }
+            } */
 
             appService.HostnameAwverifyCNameRecords = awverifyRecords;
         } 
@@ -175,16 +169,41 @@ public class DnsChecks
     /// <param name="appService">The object that holds all of the information the user has given, including the custom hostname.</param>
     public static void GetHostnameCNameRecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
-        IDnsResolver resolver = new DnsStubResolver();
+        // IDnsResolver resolver = new DnsStubResolver();
+
+        // This is moved into the AppService class itself to prevent making the string multiple times
+        // string fullHostnameDNSStyle = appService.CustomHostname + ".";
+
         try
         {
-            List<CNameRecord> cNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.CustomHostname, RecordType.CName, RecordClass.Any);
+            // List<CNameRecord> cNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.CustomHostname, RecordType.CName, RecordClass.Any);
 
             List<string> cNames = new List<string>();
-            foreach (CNameRecord cName in cNameRecords)
+
+            DnsMessage dnsMessage = DnsClient.Default.Resolve(DomainName.Parse(appService.CustomHostname), RecordType.CName);
+            if ((dnsMessage == null) || ((dnsMessage.ReturnCode != ReturnCode.NoError) && (dnsMessage.ReturnCode != ReturnCode.NxDomain)))
+            {
+                throw new Exception("DNS request failed");
+            }
+            else
+            {
+                foreach (DnsRecordBase dnsRecord in dnsMessage.AnswerRecords)
+                {
+                    if (dnsRecord.RecordType == RecordType.CName && dnsRecord.Name.ToString() == appService.CustomHostnameDNSStyle)
+                    {
+                        CNameRecord cName = dnsRecord as CNameRecord;
+                        if (cName != null)
+                        {
+                            cNames.Add(cName.CanonicalName.ToString());
+                        }
+                    }
+                }
+            }
+
+            /*foreach (CNameRecord cName in cNameRecords)
             {
                 cNames.Add(cName.CanonicalName.ToString());
-            }
+            } */
 
             appService.HostnameCNameRecords = cNames;
         }
@@ -203,16 +222,41 @@ public class DnsChecks
     /// <param name="appService">The object that holds all the information the user has given, including the Traffic Manager name.</param>
     public static void GetTrafficManagerCNameRecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
-        IDnsResolver resolver = new DnsStubResolver();
+        //IDnsResolver resolver = new DnsStubResolver();
+
+        string fullTMURL = appService.TmName + "." + appService.TrafficManagerURLEnding;
+        string fullTMURLDNSStyle = fullTMURL + ".";
+
         try
         {
-            List<CNameRecord> trafficManagerCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.TmName + "." + appService.TrafficManagerURLEnding, RecordType.CName, RecordClass.Any);
-
+            //List<CNameRecord> trafficManagerCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, appService.TmName + "." + appService.TrafficManagerURLEnding, RecordType.CName, RecordClass.Any);
+            
             List<string> trafficManagerCNames = new List<string>();
-            foreach (CNameRecord trafficManagerCName in trafficManagerCNameRecords)
+
+            DnsMessage dnsMessage = DnsClient.Default.Resolve(DomainName.Parse(fullTMURL), RecordType.CName);
+            if ((dnsMessage == null) || ((dnsMessage.ReturnCode != ReturnCode.NoError) && (dnsMessage.ReturnCode != ReturnCode.NxDomain)))
+            {
+                throw new Exception("DNS request failed");
+            }
+            else
+            {
+                foreach (DnsRecordBase dnsRecord in dnsMessage.AnswerRecords)
+                {
+                    if (dnsRecord.RecordType == RecordType.CName && dnsRecord.Name.ToString() == fullTMURLDNSStyle)
+                    {
+                        CNameRecord trafficManagerCName = dnsRecord as CNameRecord;
+                        if (trafficManagerCName != null)
+                        {
+                            trafficManagerCNames.Add(trafficManagerCName.CanonicalName.ToString());
+                        }
+                    }
+                }
+            }
+
+            /*foreach (CNameRecord trafficManagerCName in trafficManagerCNameRecords)
             {
                 trafficManagerCNames.Add(trafficManagerCName.CanonicalName.ToString());
-            }
+            } */
 
             appService.TrafficManagerCNameRecords = trafficManagerCNames;
         }
@@ -230,18 +274,43 @@ public class DnsChecks
     /// <param name="appService"></param>
     public static void GetHostnameTxtRecords(AppService appService, DNSCheckErrors dnsCheckErrors)
     {
-        IDnsResolver resolver = new DnsStubResolver();
+        //IDnsResolver resolver = new DnsStubResolver();
+
+        // This is moved into the AppService class itself to prevent making the string multiple times
+        // string fullHostnameDNSStyle = appService.CustomHostname + ".";
+
         try
         {
-            List<TxtRecord> txtRecords = DnsResolverExtensions.Resolve<TxtRecord>(resolver, appService.CustomHostname, RecordType.Txt, RecordClass.Any);
+            //List<TxtRecord> txtRecords = DnsResolverExtensions.Resolve<TxtRecord>(resolver, appService.CustomHostname, RecordType.Txt, RecordClass.Any);
 
             List<string> txts = new List<string>();
-            foreach (TxtRecord txtRecord in txtRecords)
+
+            DnsMessage dnsMessage = DnsClient.Default.Resolve(DomainName.Parse(appService.CustomHostname), RecordType.Txt);
+            if ((dnsMessage == null) || ((dnsMessage.ReturnCode != ReturnCode.NoError) && (dnsMessage.ReturnCode != ReturnCode.NxDomain)))
             {
-                txts.Add(txtRecord.TextData.ToString());
+                throw new Exception("DNS request failed");
+            }
+            else
+            {
+                foreach (DnsRecordBase dnsRecord in dnsMessage.AnswerRecords)
+                {
+                    if (dnsRecord.RecordType == RecordType.Txt && dnsRecord.Name.ToString() == appService.CustomHostnameDNSStyle)
+                    {
+                        TxtRecord txtRecord = dnsRecord as TxtRecord;
+                        if (txtRecord != null)
+                        {
+                            txts.Add(txtRecord.TextData.ToString());
+                        }
+                    }
+                }
             }
 
-            appService.HostnameTxtRecords = txts;
+            /* foreach (TxtRecord txtRecord in txtRecords)
+            {
+                txts.Add(txtRecord.TextData.ToString());
+            } */
+
+            appService.HostnameTxtRecords = txts; 
         }
         catch
         {
