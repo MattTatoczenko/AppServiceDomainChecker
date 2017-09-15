@@ -89,24 +89,52 @@ public class DnsChecks
         serversForResolving.Add(dnsServer3);
         serversForResolving.Add(dnsServer4);
         IDnsResolver resolver = new DnsStubResolver(serversForResolving, 10000); */
+
         IDnsResolver resolver = new DnsStubResolver();
         try
         {
-            List<ARecord> aRecords = DnsResolverExtensions.Resolve<ARecord>(resolver, appService.CustomHostname, RecordType.A, RecordClass.Any);
+            /*
+            List<ARecord> aRecords = DnsResolverExtensions.Resolve<ARecord>(resolver, appService.CustomHostname, RecordType.A, RecordClass.Any); */
 
+            DnsMessage dnsMessage = DnsClient.Default.Resolve(DomainName.Parse(appService.CustomHostname), RecordType.A);
+            if ((dnsMessage == null) || ((dnsMessage.ReturnCode != ReturnCode.NoError) && (dnsMessage.ReturnCode != ReturnCode.NxDomain)))
+            {
+                throw new Exception("DNS request failed");
+            }
+            else
+            {
+                List<string> aRecordsStrings = new List<string>();
+                foreach (DnsRecordBase dnsRecord in dnsMessage.AnswerRecords)
+                {
+                    if (dnsRecord.RecordType == RecordType.A && dnsRecord.Name.ToString() == appService.CustomHostname)
+                    {
+                        ARecord aRecord = dnsRecord as ARecord;
+                        if (aRecord != null)
+                        {
+                            aRecordsStrings.Add(aRecord.Address.ToString());
+                        }
+                    }
+                }
+                appService.HostnameARecords = aRecordsStrings;
+            }
+
+            /*
             List<string> aRecordsStrings = new List<string>();
             foreach (ARecord aRecord in aRecords)
             {
                 aRecordsStrings.Add(aRecord.Address.ToString());
             }
 
-            appService.HostnameARecords = aRecordsStrings;
+            appService.HostnameARecords = aRecordsStrings; */
         }
         catch
         {
             dnsCheckErrors.hostnameARecordLookupFailed = true;
             dnsCheckErrors.currentDNSFailures++;
         }
+
+
+
     }
 
     /// <summary>
