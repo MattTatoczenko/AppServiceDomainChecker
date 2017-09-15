@@ -61,8 +61,9 @@ public class CheckerDialog : IDialog<object>
 
         await context.PostAsync(message);
 
-        string message2 = "Please note that we are currently having difficulties resolving DNS records. We are working on fixing that.";
-        await context.PostAsync(message2);
+        /* Removing this section since DNS checks seem to be working with the new setup
+         * string message2 = "Please note that we are currently having difficulties resolving DNS records. We are working on fixing that.";
+         * await context.PostAsync(message2); */
         
         // Initialize the instance objects and variable
         receivedAllCustomerInformation = false;
