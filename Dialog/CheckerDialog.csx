@@ -632,6 +632,11 @@ public class CheckerDialog : IDialog<object>
 
         if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
         {
+            DnsChecks.GetHostnameTxtRecords(this.appService, this.dnsCheckErrors);
+        }
+
+        if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
+        {
             DnsChecks.GetHostnameARecords(this.appService, this.dnsCheckErrors);
         }
 
@@ -639,6 +644,8 @@ public class CheckerDialog : IDialog<object>
         {
             DnsChecks.GetHostnameAwverifyRecords(this.appService, this.dnsCheckErrors);
         }
+
+        // TODO: Check for AWVerify TXT records as well (can be either CNAME or TXT records)
 
         if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
         {
@@ -651,11 +658,6 @@ public class CheckerDialog : IDialog<object>
             {
                 DnsChecks.GetTrafficManagerCNameRecords(this.appService, this.dnsCheckErrors);
             }
-        }
-
-        if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
-        {
-            DnsChecks.GetHostnameTxtRecords(this.appService, this.dnsCheckErrors);
         }
 
         await CheckForDNSErrors(context);
