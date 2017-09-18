@@ -646,8 +646,6 @@ public class CheckerDialog : IDialog<object>
             DnsChecks.GetHostnameAwverifyRecords(this.appService, this.dnsCheckErrors);
         }
 
-        // TODO: Check for AWVerify TXT records as well (can be either CNAME or TXT records)
-
         if (dnsErrorsBeforeChecks == this.dnsCheckErrors.currentDNSFailures)
         {
             DnsChecks.GetHostnameCNameRecords(this.appService, this.dnsCheckErrors);
@@ -690,7 +688,7 @@ public class CheckerDialog : IDialog<object>
                 }
                 if (this.dnsCheckErrors.hostnameAwverifyRecordLookupFailed)
                 {
-                    await context.PostAsync("I was unable to pull DNS information on any potential awverify CNAME records for your domain.");
+                    await context.PostAsync("I was unable to pull DNS information on any potential awverify records for your domain.");
                 }
                 if (this.dnsCheckErrors.hostnameCNameRecordLookupFailed)
                 {
@@ -780,6 +778,12 @@ public class CheckerDialog : IDialog<object>
                         await context.PostAsync($"I did find a CNAME record from \"{awverifyHostname}\" to \"{fullAppServiceURL}\", which allows you to pass the App Service validation process when using an A record for the main domain.");
                         await context.PostAsync($"If you are looking to add the custom hostname of \"{this.appService.CustomHostname}\" to the \"{this.appService.AppServiceName}\" App Service, you have everything set up correctly and can proceed with doing that.");
                     }
+                    else if (this.appService.HostnameAwverifyTxtRecords.Contains(fullAppServiceURL))
+                    {
+                        // We found an awverify TXT record, so tell the user we found this. They should be able to add the hostname to the App Service.
+                        await context.PostAsync($"I did find a TXT record for \"{awverifyHostname}\" with a value of \"{fullAppServiceURL}\", which allows you to pass the App Service validation process when using an A record for the main domain.");
+                        await context.PostAsync($"If you are looking to add the custom hostname of \"{this.appService.CustomHostname}\" to the \"{this.appService.AppServiceName}\" App Service, you have everything set up correctly and can proceed with doing that.");
+                    }
                     else if (this.appService.HostnameTxtRecords.Contains(fullAppServiceURL))
                     {
                         // We found TXT record, so tell the user we found this. They should be able to add the hostname to the App Service.
@@ -788,15 +792,15 @@ public class CheckerDialog : IDialog<object>
                     }
                     else
                     {
-                        // We could not find an awverify CNAME or a proper TXT record that points to the App Service
-                        string didNotFindTXTorAwverify = $"I was unable to find a proper TXT or awverify CNAME record with the value of \"{fullAppServiceURL}\", which will prevent you from adding the custom hostname of \"{this.appService.CustomHostname}\" to your App Service.\n\n";
+                        // We could not find an AWVERIFY or a proper TXT record that points to the App Service
+                        string didNotFindTXTorAwverify = $"I was unable to find a proper TXT or AWVERIFY record with the value of \"{fullAppServiceURL}\", which will prevent you from adding the custom hostname of \"{this.appService.CustomHostname}\" to your App Service.\n\n";
 
                         // However, if the user has already added the domain to the App Service, those records aren't needed. Those are only to pass the validation needed to add a hostname to an App Service
                         string stepsForAddingOtherRecords = $"If you have already added the custom hostname of \"{this.appService.CustomHostname}\" to your App Service, then you can ignore these next directions, as they will only help to pass the hostname validation used in App Services.\n\n";
 
                         // Tell the user what they need to configure in regards to the TXT or awverify CNAME record. Also link to the online guide on how to configure the records.
                         stepsForAddingOtherRecords += $"For a TXT record, configure a TXT record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\"\n\n";
-                        stepsForAddingOtherRecords += $"For an awverify CNAME record, configure a CNAME record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\"\n\n";
+                        stepsForAddingOtherRecords += $"For an awverify record, configure a CNAME record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\" or configure a TXT record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\"\n\n";
                         string moreInfoARecords = "For more information, please visit: https://docs.microsoft.com/en-us/azure/app-service-web/app-service-web-tutorial-custom-domain#map-an-a-record";
                         await context.PostAsync(didNotFindTXTorAwverify);
                         await context.PostAsync(stepsForAddingOtherRecords);
@@ -823,6 +827,13 @@ public class CheckerDialog : IDialog<object>
                         foundAwverifyRecord += $"If you are looking to have traffic towards the custom hostname of \"{this.appService.CustomHostname}\" go to the \"{this.appService.AppServiceName}\" App Service, be sure to configure the A record properly.";
                         await context.PostAsync(foundAwverifyRecord);
                     }
+                    else if (this.appService.HostnameAwverifyTxtRecords.Contains(fullAppServiceURL))
+                    {
+                        // We found an awverify TXT record, so tell the user we found this. Still remind them to configure the A record.
+                        string foundAwverifyRecord = $"I did find a TXT record for \"{awverifyHostname}\" with a value of \"{fullAppServiceURL}\"\n\n";
+                        foundAwverifyRecord += $"If you are looking to have traffic towards the custom hostname of \"{this.appService.CustomHostname}\" go to the \"{this.appService.AppServiceName}\" App Service, be sure to configure the A record properly.";
+                        await context.PostAsync(foundAwverifyRecord);
+                    }
                     else if (this.appService.HostnameTxtRecords.Contains(fullAppServiceURL))
                     {
                         // We found TXT record, so tell the user we found this. Still remind them to configure the A record.
@@ -833,7 +844,7 @@ public class CheckerDialog : IDialog<object>
                     else
                     {
                         // We could not find an awverify CNAME or a proper TXT record that points to the App Service
-                        string didNotFindTXTorAwverify = $"I was unable to find a proper TXT or awverify CNAME record with the value of \"{fullAppServiceURL}\"";
+                        string didNotFindTXTorAwverify = $"I was unable to find a proper TXT or AWVERIFY record with the value of \"{fullAppServiceURL}\"";
                         didNotFindTXTorAwverify += $", which will prevent you from adding the custom hostname of \"{this.appService.CustomHostname}\" to your App Service.\n\n";
 
                         // However, if the user has already added the domain to the App Service, those records aren't needed. Those are only to pass the validation needed to add a hostname to an App Service
@@ -842,7 +853,7 @@ public class CheckerDialog : IDialog<object>
 
                         // Tell the user what they need to configure in regards to the TXT or awverify CNAME record. Also link to the online guide on how to configure the records.
                         stepsForAddingOtherRecords += $"For a TXT record, configure a TXT record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\"\n\n";
-                        stepsForAddingOtherRecords += $"For an awverify CNAME record, configure a CNAME record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\"";
+                        stepsForAddingOtherRecords += $"For an awverify record, configure a CNAME record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\" or configure a TXT record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\"\n\n";
                         await context.PostAsync(didNotFindTXTorAwverify);
                         await context.PostAsync(stepsForAddingOtherRecords);
                     }
@@ -933,7 +944,7 @@ public class CheckerDialog : IDialog<object>
                     }
                     else
                     {
-                        // Check that the hostname matches the App Service URL. If it doesn't, see if the AWVERIFY CNAME records matches the App Service URL, as that's used to preemptively add the hostname to the App Service
+                        // Check that the hostname matches the App Service URL. If it doesn't, see if the AWVERIFY records matches the App Service URL, as that's used to preemptively add the hostname to the App Service
                         if (cNameRecord.Equals(fullAppServiceURLDNSStyle))
                         {
                             if (this.appService.IsASE)
@@ -983,12 +994,20 @@ public class CheckerDialog : IDialog<object>
                                 foundAwverifyRecord += $"You will need to eventually switch the hostname of \"{this.appService.CustomHostname}\" to point towards the App Service URL of \"{fullAppServiceURL}\".";
                                 await context.PostAsync(foundAwverifyRecord);
                             }
+                            else if (this.appService.HostnameAwverifyTxtRecords.Contains(fullAppServiceURL))
+                            {
+                                // We did find an awverify record, so they can at least add the desired hostname to the App Service, even if traffic to that hostname doesn't go to the App Service.
+                                string foundAwverifyRecord = $"However, we did find a TXT record for \"{awverifyHostname}\" with a value of \"{fullAppServiceURL}\", ";
+                                foundAwverifyRecord += "which allows you to pass the App Service validation process without adjusting the actual hostname.\n\n";
+                                foundAwverifyRecord += $"You will need to eventually switch the hostname of \"{this.appService.CustomHostname}\" to point towards the App Service URL of \"{fullAppServiceURL}\".";
+                                await context.PostAsync(foundAwverifyRecord);
+                            }
                             else
                             {
                                 // We didn't find an awverify record either. Tell them how to configure either the regular CNAME or an awverify CNAME
                                 await context.PostAsync("You have two options to pass the hostname validation for App Services.");
                                 await context.PostAsync($"Option 1: Configure a CNAME record for \"{this.appService.CustomHostname}\" with the value of \"{fullAppServiceURL}\".");
-                                string option2 = $"Option 2: For an awverify CNAME record, configure a CNAME record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\"\n\n";
+                                string option2 = $"Option 2: For an awverify record, configure a CNAME record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\" or configure a TXT record for \"{awverifyHostname}\" with the value of \"{fullAppServiceURL}\"\n\n";
                                 option2 += $"You will need to eventually switch the hostname of \"{this.appService.CustomHostname}\" to point towards the App Service URL of \"{fullAppServiceURL}\".";
                                 await context.PostAsync(option2);
                             }

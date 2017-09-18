@@ -125,23 +125,45 @@ public class DnsChecks
         {
             // List<CNameRecord> awverifyCNameRecords = DnsResolverExtensions.Resolve<CNameRecord>(resolver, awverifyRecordURL, RecordType.CName, RecordClass.Any);
 
-            List<string> awverifyRecords = new List<string>();
+            List<string> awverifyCNameRecords = new List<string>();
 
-            DnsMessage dnsMessage = DnsClient.Default.Resolve(DomainName.Parse(awverifyRecordURL), RecordType.CName);
-            if ((dnsMessage == null) || ((dnsMessage.ReturnCode != ReturnCode.NoError) && (dnsMessage.ReturnCode != ReturnCode.NxDomain)))
+            DnsMessage dnsMessage1 = DnsClient.Default.Resolve(DomainName.Parse(awverifyRecordURL), RecordType.CName);
+            if ((dnsMessage1 == null) || ((dnsMessage1.ReturnCode != ReturnCode.NoError) && (dnsMessage1.ReturnCode != ReturnCode.NxDomain)))
             {
                 throw new Exception("DNS request failed");
             }
             else
             {
-                foreach (DnsRecordBase dnsRecord in dnsMessage.AnswerRecords)
+                foreach (DnsRecordBase dnsRecord in dnsMessage1.AnswerRecords)
                 {
                     if (dnsRecord.RecordType == RecordType.CName && dnsRecord.Name.ToString() == awverifyURLDNSStyle)
                     {
                         CNameRecord awverifyCNameRecord = dnsRecord as CNameRecord;
                         if (awverifyCNameRecord != null)
                         {
-                            awverifyRecords.Add(awverifyCNameRecord.CanonicalName.ToString());
+                            awverifyCNameRecords.Add(awverifyCNameRecord.CanonicalName.ToString());
+                        }
+                    }
+                }
+            }
+
+            List<string> awverifyTxtRecords = new List<string>();
+
+            DnsMessage dnsMessage2 = DnsClient.Default.Resolve(DomainName.Parse(awverifyRecordURL), RecordType.Txt);
+            if ((dnsMessage2 == null) || ((dnsMessage2.ReturnCode != ReturnCode.NoError) && (dnsMessage2.ReturnCode != ReturnCode.NxDomain)))
+            {
+                throw new Exception("DNS request failed");
+            }
+            else
+            {
+                foreach (DnsRecordBase dnsRecord in dnsMessage2.AnswerRecords)
+                {
+                    if (dnsRecord.RecordType == RecordType.Txt && dnsRecord.Name.ToString() == awverifyURLDNSStyle)
+                    {
+                        TxtRecord awverifyTxtRecord = dnsRecord as TxtRecord;
+                        if (awverifyTxtRecord != null)
+                        {
+                            awverifyTxtRecords.Add(awverifyTxtRecord.TextData.ToString());
                         }
                     }
                 }
@@ -153,7 +175,8 @@ public class DnsChecks
                 awverifyRecords.Add(awverifyCName.CanonicalName.ToString());
             } */
 
-            appService.HostnameAwverifyCNameRecords = awverifyRecords;
+            appService.HostnameAwverifyCNameRecords = awverifyCNameRecords;
+            appService.HostnameAwverifyTxtRecords = awverifyTxtRecords;
         } 
         catch
         {

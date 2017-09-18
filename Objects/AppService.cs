@@ -17,6 +17,7 @@ public class AppService
     private List<string> hostnameCNameRecords;
     private List<string> hostnameTxtRecords;
     private List<string> hostnameAwverifyCNameRecords;
+    private List<string> hostnameAwverifyTxtRecords;
     private List<string> trafficManagerCNameRecords;
 
     public string AppServiceURLEnding = "azurewebsites.net";
@@ -160,6 +161,18 @@ public class AppService
         set
         {
             hostnameAwverifyCNameRecords = value;
+        }
+    }
+
+    public List<string> HostnameAwverifyTxtRecords
+    {
+        get
+        {
+            return hostnameAwverifyTxtRecords;
+        }
+        set
+        {
+            hostnameAwverifyTxtRecords = value;
         }
     }
 
